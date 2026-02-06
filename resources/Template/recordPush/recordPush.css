@@ -1,0 +1,382 @@
+body {
+    background: #0b0f13;
+    color: #F2F2F2;
+    width: 600px;
+    height: auto;
+    min-height: 400px;
+    font-family: 'ProjectD', "Microsoft YaHei", "PingFang SC", sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    position: relative;
+    width: 600px;
+    min-height: 400px;
+    margin: 0 auto;
+    background: transparent;
+    overflow: hidden;
+}
+
+/* 头部区域 */
+.header {
+    position: relative;
+    z-index: 2;
+    padding: 20px 20px 10px 20px;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.game-logo {
+    height: 24px;
+    width: auto;
+    opacity: 0.9;
+    flex-shrink: 0;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.header-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.recent-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: rgba(255, 180, 0, 0.2);
+    border: 1px solid rgba(255, 180, 0, 0.4);
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffb400;
+}
+
+.player-name {
+    color: #FFFFFF;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.mode-name {
+    color: rgba(15, 247, 150, 1);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 1px;
+}
+
+.time-stamp {
+    color: rgba(242, 242, 242, 0.5);
+    font-size: 11px;
+    font-family: 'Consolas', monospace;
+}
+
+/* 内容区域 */
+.content {
+    position: relative;
+    z-index: 2;
+    padding: 10px 20px 20px 20px;
+}
+
+/* 战绩卡片 */
+.record-card {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-clip: padding-box;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    min-height: 300px;
+    isolation: isolate;
+}
+
+/* 地图名称显示 */
+.map-name-display {
+    font-size: 18px;
+    font-weight: 700;
+    color: #FFFFFF;
+    letter-spacing: 0.5px;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.operator-name-display {
+    font-size: 15px;
+    font-weight: 700;
+    color: #FFFFFF;
+    letter-spacing: 0.3px;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.title-separator {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 16px;
+    font-weight: 300;
+    margin: 0 2px;
+}
+
+/* 增强数据区域的遮罩感 */
+.data-section {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    z-index: 2;
+    background: linear-gradient(180deg, rgba(11, 15, 19, 0.4) 0%, rgba(11, 15, 19, 0.6) 100%);
+    border-radius: 12px;
+}
+
+/* 优化头部标题行 */
+.card-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    gap: 12px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+.title-info {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    flex-wrap: wrap;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: bold;
+    color: #FFFFFF;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.status-badge.success {
+    background: rgba(15, 247, 150, 0.25);
+    color: #0FF796;
+    border: 1px solid rgba(15, 247, 150, 0.4);
+}
+
+.status-badge.fail {
+    background: rgba(255, 82, 82, 0.25);
+    color: #ff5252;
+    border: 1px solid rgba(255, 82, 82, 0.4);
+}
+
+.status-badge.exit {
+    background: rgba(255, 180, 0, 0.25);
+    color: #ffb400;
+    border: 1px solid rgba(255, 180, 0, 0.4);
+}
+
+/* 数据内容容器 - 垂直居中 */
+.data-content-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 0;
+}
+
+/* 优化数据网格布局，使其更像专业战绩面板 */
+.data-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 15px;
+    padding: 20px 18px 0 18px;
+}
+
+/* 重新定义数据项样式 */
+.data-item-main {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* 改为左对齐更有专业感 */
+    padding-left: 10px;
+    border-left: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.data-label {
+    background: transparent; /* 去掉背景，改用简洁风格 */
+    border: none;
+    padding: 0;
+    font-size: 11px;
+    color: #FFFFFF;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    font-weight: 700;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+}
+
+.data-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: #F2F2F2;
+    line-height: 1.5;
+    word-break: break-word;
+    letter-spacing: -0.5px;
+}
+
+.highlight-value,
+.highlight-score,
+.highlight-kda {
+    color: #0FF796;
+    font-weight: 700;
+    font-size: 19px;
+}
+
+.highlight-income {
+    font-weight: 700;
+    font-size: 19px;
+}
+
+/* 净收益正负颜色 */
+.highlight-income.income-positive {
+    color: #0FF796;
+}
+
+.highlight-income.income-negative {
+    color: #ff5252;
+}
+
+/* 第2行：击杀统计和救援 */
+.data-row-secondary {
+    padding: 20px 18px 20px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+/* 击杀统计（烽火地带） */
+.kills-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+    padding-left: 10px;
+    border-left: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.kills-label {
+    background: transparent;
+    border: none;
+    padding: 0;
+    font-size: 11px;
+    color: #FFFFFF;
+    margin-bottom: 6px;
+    font-weight: 700;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+.kills-content {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    line-height: 1.6;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.kill-item {
+    font-weight: 600;
+    display: inline-block;
+}
+
+.kill-separator {
+    color: rgba(242, 242, 242, 0.5);
+    margin: 0 2px;
+    font-weight: 400;
+}
+
+.kill-player {
+    color: #0FF796;
+}
+
+.kill-ai-player {
+    color: #ff5252;
+}
+
+.kill-ai {
+    color: #ffb400;
+}
+
+/* 救援 */
+.rescue-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+.rescue-label {
+    font-size: 11px;
+    color: #FFFFFF;
+    background: transparent;
+    border: none;
+    padding: 0;
+    font-weight: 700;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+.rescue-value {
+    font-size: 15px;
+    font-weight: 600;
+    color: #FFFFFF;
+    line-height: 1.6;
+    white-space: nowrap;
+}
+
+/* 页脚 */
+.template-footer {
+    padding: 15px 20px;
+}
+
+.copyright-text {
+    font-size: 12px;
+    color: rgba(242, 242, 242, 0.5);
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    text-align: center;
+}

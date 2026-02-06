@@ -1,0 +1,323 @@
+/* 基础设置 */
+:root {
+    --primary-color: #0FF796;
+    --bg-dark: #05080a;
+    --card-bg: rgba(255, 255, 255, 0.03);
+    --border-color: rgba(15, 247, 150, 0.2);
+}
+
+body {
+    background: var(--bg-dark);
+    color: #fff;
+    font-family: 'ProjectD', "Microsoft YaHei", sans-serif;
+    margin: 0;
+    width: 2000px; /* 保持原稿宽度 */
+}
+
+.container {
+    padding: 60px;
+    position: relative;
+    min-height: 1200px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* 背景装饰 */
+.bg-grid {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle at 2px 2px, rgba(15, 247, 150, 0.05) 1px, transparent 0);
+    background-size: 40px 40px;
+    z-index: -1;
+}
+
+
+/* 头部 */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 60px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 30px;
+}
+
+.header-left { display: flex; align-items: center; gap: 30px; }
+.logo-box img { height: 70px; }
+
+.header-right { display: flex; align-items: flex-start; gap: 20px; }
+.user-info { text-align: right; display: flex; flex-direction: column; }
+.user-name-row { display: flex; align-items: center; gap: 15px; justify-content: flex-end; margin-bottom: 6px; }
+.season-info { font-size: 18px; color: #FFFFFF; font-weight: 700; }
+.user-name { font-size: 36px; font-weight: 700; color: #FFFFFF; }
+.report-date { font-size: 16px; color: #FFFFFF; font-weight: 700; }
+.avatar-wrapper img {
+    width: 100px; height: 100px;
+    border: 2px solid var(--primary-color);
+    padding: 4px;
+    background: #000;
+}
+
+/* 数据看板区域 */
+.dashboard-section {
+    margin-bottom: 60px;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.dashboard-grid.mp-grid {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+.node-value.highlight-green {
+    color: #0FF796;
+}
+
+.data-node {
+    background: var(--card-bg);
+    border: 1px solid rgba(255,255,255,0.05);
+    padding: 25px;
+    position: relative;
+    border-left: 4px solid rgba(255,255,255,0.2);
+}
+
+.data-node.highlight { border-left-color: var(--primary-color); background: rgba(15, 247, 150, 0.02); }
+.data-node.gold { border-left-color: #ffb800; }
+
+.node-label { font-size: 24px; color: #FFFFFF; margin-bottom: 15px; font-weight: 700; }
+.node-value { font-size: 36px; font-weight: 800; font-family: 'ProjectD', 'D-DIN', sans-serif; }
+.node-value.large { font-size: 54px; color: var(--primary-color); }
+
+.rank-display { display: flex; align-items: center; gap: 20px; }
+.rank-img { height: 70px; }
+
+/* KD数据卡片 */
+.kd-card {
+    background: var(--card-bg);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-left: 4px solid rgba(255,255,255,0.2);
+    padding: 25px;
+    margin-bottom: 30px;
+}
+
+.kd-label {
+    font-size: 20px;
+    color: #FFFFFF;
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+
+.kd-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.kd-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.kd-item small {
+    display: block;
+    color: #FFFFFF;
+    font-size: 16px;
+    margin-bottom: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.kd-item span {
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--primary-color);
+    font-family: 'ProjectD', 'D-DIN', sans-serif;
+}
+
+/* 区块样式 */
+.section-block {
+    background: rgba(255,255,255,0.01);
+    border: 1px solid rgba(255,255,255,0.05);
+    padding: 30px;
+    margin-bottom: 40px;
+}
+
+.section-header {
+    font-size: 36px; font-weight: bold; margin-bottom: 25px;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 10px;
+}
+
+.section-header .dot { width: 8px; height: 8px; background: var(--primary-color); }
+
+/* 地图卡片 */
+.map-list { 
+    display: flex;
+    flex-direction: column;
+    gap: 20px; 
+}
+
+.map-list-mp {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+.map-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+}
+.map-card {
+    position: relative; height: 220px; border-radius: 8px; overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.map-bg { width: 100%; height: 100%; object-fit: cover; opacity: 0.5; transition: 0.3s; }
+.map-card:hover .map-bg { transform: scale(1.1); opacity: 0.8; }
+.map-content {
+    position: absolute; bottom: 0; left: 0; width: 100%;
+    padding: 25px; background: linear-gradient(transparent, rgba(0,0,0,0.9));
+    min-height: 100px;
+}
+.map-name { font-weight: bold; font-size: 24px; color: #FFFFFF; margin-bottom: 12px; }
+.map-stats { font-size: 18px; color: #FFFFFF; font-weight: 700; }
+
+/* 武器列表 */
+.weapon-list { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+    gap: 15px; 
+}
+.weapon-item {
+    display: flex; 
+    flex-direction: column;
+    background: rgba(255,255,255,0.03);
+    padding: 15px; 
+    border-radius: 4px; 
+    align-items: center;
+    gap: 12px;
+}
+.weapon-img-box { 
+    width: 100%; 
+    height: 150px; 
+    background: rgba(0,0,0,0.3); 
+    border-radius: 4px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    flex-shrink: 0;
+}
+.weapon-img-box img { 
+    max-width: 100%; 
+    max-height: 100%; 
+    object-fit: contain; 
+}
+.weapon-info { 
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+}
+.weapon-name { 
+    font-size: 34px; 
+    font-weight: 700; 
+    color: #FFFFFF; 
+}
+.weapon-meta { 
+    font-size: 28px; 
+    color: #FFFFFF; 
+    font-weight: 700; 
+}
+.weapon-val { 
+    font-size: 28px; 
+    color: #0FF796; 
+    font-weight: 700; 
+    font-family: 'D-DIN', monospace; 
+}
+
+/* 收藏品统计 */
+.collection-stats {
+    margin-bottom: 30px;
+}
+
+.collection-stats .data-node {
+    max-width: 400px;
+}
+
+/* 收藏品列表 */
+.asset-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.asset-item {
+    display: flex;
+    gap: 15px;
+    background: rgba(255,255,255,0.03);
+    padding: 15px;
+    border-radius: 4px;
+    align-items: center;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.asset-img-box {
+    width: 80px;
+    height: 80px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.asset-img-box img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.asset-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.asset-name {
+    font-size: 38px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+.asset-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.asset-price {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0FF796;
+    font-family: 'D-DIN', monospace;
+}
+
+.asset-count {
+    font-size: 28px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+/* 全面战场红色主题 */
+.mp-theme { --primary-color: #ff5252; }

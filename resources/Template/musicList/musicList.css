@@ -1,0 +1,271 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'ProjectD', 'Microsoft YaHei', sans-serif;
+    background: #0b0f13;
+    width: 100%;
+    min-height: auto;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px;
+    box-sizing: border-box;
+    transform: none;
+    transform-origin: unset;
+    overflow: visible;
+}
+
+.music-list-container {
+    width: 1200px;
+    margin: 0 auto;
+    position: relative;
+    background: #0d1217;
+    border: 2px solid #0FF796;
+    border-radius: 12px;
+    overflow: visible;
+    box-shadow: 0 0 30px rgba(15, 247, 150, 0.1);
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    min-height: auto;
+}
+
+.bg-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    opacity: 0.15;
+    z-index: 0;
+    pointer-events: none;
+}
+
+
+/* ========== 头部区域 ========== */
+.header-section {
+    position: relative;
+    z-index: 2;
+    padding: 28px 40px;
+    background: rgba(15, 247, 150, 0.03);
+    border-bottom: 1px solid rgba(15, 247, 150, 0.2);
+}
+
+.game-meta {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.game-logo {
+    height: 28px;
+    width: auto;
+    object-fit: contain;
+    display: block;
+}
+
+.title-section {
+    margin-bottom: 12px;
+}
+
+.main-title {
+    color: #FFFFFF;
+    font-size: 42px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    line-height: 1.2;
+}
+
+.subtitle-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.subtitle-text {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.count-info {
+    color: #0FF796;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+/* ========== 使用提示 ========== */
+.usage-tip {
+    position: relative;
+    z-index: 2;
+    padding: 16px 40px;
+    background: rgba(15, 247, 150, 0.05);
+    border-bottom: 1px solid rgba(15, 247, 150, 0.1);
+}
+
+.tip-text {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.command {
+    color: #0FF796;
+    font-weight: 700;
+    background: rgba(15, 247, 150, 0.1);
+    padding: 4px 10px;
+    border-radius: 4px;
+    margin: 0 4px;
+}
+
+/* ========== 音乐列表 ========== */
+.music-list {
+    position: relative;
+    z-index: 2;
+    padding: 32px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* 音乐项 */
+.music-item {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    position: relative;
+}
+
+/* 序号 */
+.music-index {
+    min-width: 56px;
+    width: 56px;
+    height: 56px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 24px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* 封面容器 */
+.music-cover-wrapper {
+    position: relative;
+    width: 96px;
+    height: 96px;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.music-cover {
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    object-fit: cover;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.music-cover-placeholder {
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    background: rgba(15, 247, 150, 0.1);
+    border: 2px solid rgba(15, 247, 150, 0.2);
+    display: block;
+}
+
+/* 信息区域 */
+.music-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.music-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.music-name {
+    color: #FFFFFF;
+    font-size: 24px;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}
+
+.music-command-badge {
+    background: rgba(15, 247, 150, 0.12);
+    color: #0FF796;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(15, 247, 150, 0.25);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.music-artist {
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 18px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.music-tags {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.music-tag {
+    font-size: 14px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border-radius: 12px;
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.playlist-tag {
+    color: rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.hot-tag {
+    color: #FFB84D;
+    background: rgba(255, 184, 77, 0.12);
+}
+

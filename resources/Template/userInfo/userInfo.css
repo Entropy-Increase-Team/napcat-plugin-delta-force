@@ -1,0 +1,249 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'ProjectD', 'Microsoft YaHei', sans-serif;
+    background: white;
+    width: 1365px;
+    height: 640px;
+    overflow: hidden;
+    /* 移除固定缩放，提升性能 */
+    /* GPU加速优化 */
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+}
+
+.container { 
+    width: 1365px;
+    height: 640px;
+    position: relative; 
+    background: white;
+    padding: 0;
+    margin: 0;
+    /* GPU加速 */
+    will-change: transform;
+}
+
+/* 图片优化 */
+img {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: optimize-contrast;
+}
+
+/* 装饰线条 */
+.decor-line { 
+    background: #23F79E; 
+    position: absolute;
+    /* GPU加速 */
+    will-change: transform;
+}
+
+/* 用户基础信息样式 */
+.user-avatar {
+    border-radius: 8px;
+    object-fit: cover;
+    /* 图片渲染优化 */
+    image-rendering: high-quality;
+    image-rendering: -webkit-optimize-contrast;
+}
+
+.user-avatar-placeholder {
+    background: #ccc;
+    border-radius: 8px;
+}
+
+.user-name { 
+    color: white; 
+    font-size: 36px; 
+    font-family: 'ProjectD', 'Microsoft YaHei', sans-serif; 
+    font-weight: 700; 
+    word-wrap: break-word;
+    justify-content: center;
+    display: flex;
+    flex-direction: column;
+}
+
+.user-register-time, .user-last-login { 
+    color: white; 
+    font-size: 18px; 
+    font-family: 'ProjectD', 'Microsoft YaHei', sans-serif; 
+    font-weight: 700; 
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    align-items: flex-start;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 账号状态信息 */
+.account-status { 
+    color: white; 
+    font-size: 15px; 
+    font-family: 'ProjectD', 'Microsoft YaHei', sans-serif; 
+    font-weight: 700; 
+    letter-spacing: 3px; 
+    word-wrap: break-word;
+    opacity: 0.65;
+    justify-content: center;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 游戏模式卡片 */
+.game-mode-card {
+    position: relative;
+    overflow: hidden;
+}
+
+/* 模式标题容器 */
+.mode-title-container {
+    position: relative;
+    overflow: hidden;
+}
+
+/* 模式标题背景图片 */
+.mode-title-bg {
+    object-fit: cover;
+    display: block;
+    z-index: 1;
+}
+
+/* 模式标题 */
+.mode-title { 
+    color: white; 
+    font-size: 36px; 
+    font-family: 'ProjectD', 'Microsoft YaHei', sans-serif; 
+    font-weight: 700; 
+    word-wrap: break-word;
+    justify-content: center;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+    position: relative;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* 等级和段位信息 */
+.level-info { 
+    color: white; 
+    font-size: 24px; 
+    font-family: 'ProjectD', 'Microsoft YaHei', sans-serif; 
+    font-weight: 700; 
+    word-wrap: break-word;
+    justify-content: center;
+    display: flex;
+    flex-direction: column;
+}
+
+.rank-info { 
+    color: white; 
+    font-size: 24px; 
+    font-family: 'ProjectD', 'Microsoft YaHei', sans-serif; 
+    font-weight: 700; 
+    word-wrap: break-word;
+    justify-content: center;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 段位图标 */
+.rank-icon {
+    object-fit: contain;
+    display: block;
+}
+
+/* 统计数据行 */
+.stats-row {
+    position: relative;
+}
+
+.stat-item { 
+    color: white; 
+    font-size: 24px; 
+    font-family: 'ProjectD', 'Microsoft YaHei', sans-serif; 
+    font-weight: 700; 
+    word-wrap: break-word;
+    justify-content: center;
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-divider { 
+    color: white; 
+    font-size: 24px; 
+    font-family: 'ProjectD', 'Microsoft YaHei', sans-serif; 
+    font-weight: 700; 
+    word-wrap: break-word;
+    justify-content: center;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 资产信息 */
+.asset-info { 
+    color: white; 
+    font-size: 24px; 
+    font-family: 'ProjectD', 'Microsoft YaHei', sans-serif; 
+    font-weight: 700; 
+    word-wrap: break-word;
+    justify-content: center;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 插件水印 */
+.plugin-watermark {
+    color: #858788;
+    font-size: 24px;
+    font-family: 'ProjectD', 'Microsoft YaHei', sans-serif;
+    font-weight: 700;
+    word-wrap: break-word;
+    text-align: center;
+    justify-content: center;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 响应式设计 */
+@media (max-width: 1400px) {
+    body {
+        width: 100%;
+        transform: scale(0.8);
+        transform-origin: top left;
+    }
+}
+
+/* 高亮数值样式 */
+.highlight-value {
+    color: #23F79E;
+    font-weight: 800;
+}
+
+/* 卡片阴影效果 */
+.game-mode-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    pointer-events: none;
+}
+
+/* hover效果 */
+.rank-icon:hover {
+    transform: scale(1.1);
+    transition: transform 0.3s ease;
+}
+
+.user-avatar:hover {
+    transform: scale(1.05);
+    transition: transform 0.3s ease;
+} 

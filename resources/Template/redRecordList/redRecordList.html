@@ -1,0 +1,107 @@
+{{extend commonLayout}}
+{{block 'css'}}
+<link rel="stylesheet" type="text/css" href="{{_res_path}}Template/redRecordList/redRecordList.css"/>
+{{/block}}
+{{block 'main'}}
+<div class="red-record-list-container">
+    <!-- 整体背景图片 -->
+    <img class="bg-overlay" src="{{_res_path}}imgs/redCollection/bg.webp" />
+    
+    <!-- ========== 头部区域 ========== -->
+    <div class="user-header">
+        <div class="game-meta">
+            <img class="game-logo" src="{{_res_path}}imgs/others/logo.png" alt="三角洲行动" />
+        </div>
+        <div class="user-profile">
+            <div class="avatar-wrapper">
+                <img class="avatar" src="{{userAvatar}}" data-qq-avatar="{{qqAvatarUrl}}" onerror="if(this.dataset.qqAvatar){this.src=this.dataset.qqAvatar;this.onerror=null;}else{this.style.display='none';}" />
+            </div>
+            <div class="user-meta">
+                <div class="nickname">{{userName}}</div>
+                <div class="rank-tag">
+                    <span class="rank-text">{{userRank}}</span>
+                    {{if userRankImage}}
+                    <img class="rank-icon" src="{{_res_path}}{{userRankImage}}" alt="{{userRank}}" onerror="this.style.display='none';" />
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ========== 统计信息区域 ========== -->
+    <div class="section-block stats-section">
+        <div class="section-header">
+            <span class="dot"></span> 出红记录统计 / STATISTICS
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-content">
+                <div class="stat-label">收藏种类</div>
+                <div class="stat-value">{{statistics.redGodCount}}</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-content">
+                <div class="stat-label">总出红次数</div>
+                <div class="stat-value">{{statistics.redTotalCount}}</div>
+                </div>
+            </div>
+            <div class="stat-card highlight">
+                <div class="stat-content">
+                <div class="stat-label">总价值</div>
+                    <div class="stat-value text-glow">{{statistics.redTotalValue}}</div>
+                </div>
+            </div>
+            {{if statistics.unlockedCount}}
+            <div class="stat-card">
+                <div class="stat-content">
+                <div class="stat-label">未解锁</div>
+                <div class="stat-value">{{statistics.unlockedCount}}</div>
+                </div>
+            </div>
+            {{/if}}
+        </div>
+    </div>
+    
+    <!-- ========== 出红记录列表 ========== -->
+    <div class="section-block list-section">
+        <div class="section-header">
+            <span class="dot"></span> 出红记录列表 / RECORD LIST
+            {{if totalRecords > 0}}
+            <span class="records-badge">{{totalRecords}}</span>
+            {{/if}}
+        </div>
+        
+        <div class="records-content">
+            {{if records && records.length > 0}}
+                {{each records record index}}
+                <div class="record-entry {{if index < 3}}top-rank{{/if}}">
+                    <div class="entry-index">{{index + 1}}</div>
+                    <div class="entry-item-preview">
+                        <img src="{{record.imageUrl}}" onerror="this.style.opacity='0'" />
+                    </div>
+                    <div class="entry-data">
+                        <div class="entry-row">
+                            <span class="entry-label">物品名称 / ITEM NAME</span>
+                            <span class="entry-value">{{record.name}}</span>
+                        </div>
+                        <div class="entry-row">
+                            <span class="entry-label">出红次数 / COUNT</span>
+                            <span class="entry-value">{{record.count}}</span>
+                        </div>
+                        <div class="entry-row">
+                            <span class="entry-label">总价值 / VALUE</span>
+                            <span class="entry-value highlight">{{record.value}}</span>
+                        </div>
+                    </div>
+                </div>
+                {{/each}}
+            {{else}}
+                <div class="empty-state">暂无出红记录</div>
+            {{/if}}
+        </div>
+    </div>
+</div>
+{{/block}}
+{{block 'footer'}}{{/block}}
