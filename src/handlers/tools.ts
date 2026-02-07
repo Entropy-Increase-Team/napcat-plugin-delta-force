@@ -6,11 +6,45 @@
 import type { OB11Message } from 'napcat-types';
 import { pluginState } from '../core/state';
 import { createApi } from '../core/api';
-import { reply, replyAt, getUserId, makeForwardMsg } from '../utils/message';
+import { reply, replyAt, getUserId, makeForwardMsg, sendAudio } from '../utils/message';
 import { handleApiError as _handleApiError } from '../utils/error-handler';
 import { getAccount } from '../utils/account';
 import type { CommandDef } from '../utils/command';
 import { logger } from '../utils/logger';
+
+/** 备用 TTS 接口（仅 AI 锐评使用） */
+const FALLBACK_TTS_URL = 'https://i.elaina.vin/api/tts/';
+const FALLBACK_TTS_CHAR_ID = '2538';
+
+/** 每人每天仅允许使用一次备用接口（持久化到文件） */
+function getFallbackTtsUsagePath (): string {
+  return require('node:path').join(pluginState.dataPath, 'tts-usage.json');
+}
+
+function loadTtsUsage (): Record<string, string> {
+  try {
+    const fs = require('node:fs');
+    const p = getFallbackTtsUsagePath();
+    if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf-8'));
+  } catch { /* ignore */ }
+  return {};
+}
+
+function saveTtsUsage (data: Record<string, string>): void {
+  try {
+    const fs = require('node:fs');
+    fs.writeFileSync(getFallbackTtsUsagePath(), JSON.stringify(data), 'utf-8');
+  } catch { /* ignore */ }
+}
+
+function checkAndMarkTtsUsage (userId: string): boolean {
+  const today = new Date().toISOString().slice(0, 10);
+  const usage = loadTtsUsage();
+  if (usage[userId] === today) return false; // 已用过
+  usage[userId] = today;
+  saveTtsUsage(usage);
+  return true; // 可使用
+}
 
 /** 错误处理包装，返回 true 表示有错误已处理 */
 async function checkApiError (res: any, msg: OB11Message): Promise<boolean> {
@@ -130,7 +164,7 @@ async function findAiPreset (keyword: string): Promise<any | null> {
 }
 
 /** 解析 AI 评价参数 */
-function parseAiArgs (args: string): { mode: string; preset: string | null } {
+function parseAiArgs (args: string): { mode: string; preset: string | null; } {
   const parts = args.trim().split(/\s+/);
   let mode = 'sol';
   let preset: string | null = null;
@@ -206,10 +240,51 @@ export async function aiComment (msg: OB11Message, args: string): Promise<boolea
     comment = rawData.comment;
   }
 
-  if (comment) {
-    await reply(msg, `【${modeName} AI${presetName}】\n\n${comment}`);
-  } else {
+  if (!comment) {
     await reply(msg, 'AI 评价数据格式异常');
+    return true;
+  }
+
+  // TTS 语音合成：内置接口 → 备用接口 → 纯文本
+  const textMsg = `【${modeName} AI${presetName}】\n\n${comment}`;
+  let ttsSuccess = false;
+
+  // 1. 内置后端 TTS
+  if (pluginState.config.tts?.enabled !== false) {
+    try {
+      const ttsRes = await api.ttsSynthesize({ text: comment.substring(0, 800) });
+      if (ttsRes && (ttsRes as any).data?.url) {
+        await makeForwardMsg(msg, [textMsg], { nickname: 'AI锐评' });
+        await sendAudio(msg, (ttsRes as any).data.url);
+        ttsSuccess = true;
+      }
+    } catch { /* 静默失败，走备用 */ }
+  }
+
+  // 2. 备用 TTS（每人每天一次，持久化计数，API 返回 302 → audio/xxx.mp3）
+  if (!ttsSuccess && checkAndMarkTtsUsage(userId)) {
+    try {
+      const resp = await fetch(
+        `${FALLBACK_TTS_URL}?text=${encodeURIComponent(comment.substring(0, 800))}&id=${FALLBACK_TTS_CHAR_ID}&iz=sjz`,
+        { redirect: 'manual', signal: AbortSignal.timeout(30000) }
+      );
+      const location = resp.headers.get('location') || '';
+      if (location) {
+        const audioUrl = location.startsWith('http') ? location : `https://i.elaina.vin/api/tts/${location}`;
+        const audio = await fetch(audioUrl, { signal: AbortSignal.timeout(30000) });
+        if (audio.ok) {
+          const base64 = Buffer.from(await audio.arrayBuffer()).toString('base64');
+          await makeForwardMsg(msg, [textMsg], { nickname: 'AI锐评' });
+          await sendAudio(msg, `base64://${base64}`);
+          ttsSuccess = true;
+        }
+      }
+    } catch { /* 静默失败 */ }
+  }
+
+  // 3. 都失败，仅发文本
+  if (!ttsSuccess) {
+    await makeForwardMsg(msg, [textMsg], { nickname: 'AI锐评' });
   }
 
   return true;
@@ -622,7 +697,7 @@ export async function getCollection (msg: OB11Message): Promise<boolean> {
   }
 
   // 品质配置 - 支持中文和颜色两种格式
-  const qualityConfig: Record<string, { level: number; name: string }> = {
+  const qualityConfig: Record<string, { level: number; name: string; }> = {
     '橙': { level: 5, name: '传说' },
     '紫': { level: 4, name: '史诗' },
     '蓝': { level: 3, name: '稀有' },
