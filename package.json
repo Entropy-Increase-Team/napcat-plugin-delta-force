@@ -27,5 +27,10 @@
     "QQ机器人"
   ],
   "author": "冷曦",
+  "napcat": {
+    "tags": ["游戏", "工具"],
+    "minVersion": "4.14.0",
+    "homepage": "https://github.com/Entropy-Increase-Team/napcat-plugin-delta-force"
+  },
   "license": "AGPL-3.0"
 }

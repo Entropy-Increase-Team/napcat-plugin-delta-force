@@ -1,0 +1,173 @@
+name: 自动更新插件索引
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '手动指定版本号（如 v1.0.0），留空则从最新 Release 获取'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+env:
+  INDEX_REPO: NapNeko/napcat-plugin-index
+  INDEX_REPO_NAME: napcat-plugin-index
+  INDEX_BRANCH: main
+  INDEX_FILE: plugins.v4.json
+
+jobs:
+  update-index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Extract plugin metadata
+        id: meta
+        run: |
+          PLUGIN_ID=$(node -e "console.log(require('./package.json').name)")
+          PLUGIN_NAME=$(node -e "console.log(require('./package.json').plugin || require('./package.json').name)")
+          DESCRIPTION=$(node -e "console.log(require('./package.json').description || '')")
+          AUTHOR=$(node -e "console.log(require('./package.json').author || '')")
+          TAGS=$(node -e "console.log(JSON.stringify(require('./package.json').napcat?.tags || ['工具']))")
+          MIN_VERSION=$(node -e "console.log(require('./package.json').napcat?.minVersion || '4.14.0')")
+          HOMEPAGE=$(node -e "console.log(require('./package.json').napcat?.homepage || '')")
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [ "${{ github.event_name }}" = "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          else
+            VERSION="v$(node -e "console.log(require('./package.json').version)")"
+          fi
+          CLEAN_VERSION=$(echo $VERSION | sed 's/^v//')
+
+          REPO_FULL="${{ github.repository }}"
+          DOWNLOAD_URL="https://github.com/${REPO_FULL}/releases/download/${VERSION}/${PLUGIN_ID}.zip"
+
+          if [ -z "$HOMEPAGE" ]; then
+            HOMEPAGE="https://github.com/${REPO_FULL}"
+          fi
+
+          echo "plugin_id=$PLUGIN_ID" >> $GITHUB_OUTPUT
+          echo "plugin_name=$PLUGIN_NAME" >> $GITHUB_OUTPUT
+          echo "version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
+          echo "description=$DESCRIPTION" >> $GITHUB_OUTPUT
+          echo "author=$AUTHOR" >> $GITHUB_OUTPUT
+          echo "homepage=$HOMEPAGE" >> $GITHUB_OUTPUT
+          echo "download_url=$DOWNLOAD_URL" >> $GITHUB_OUTPUT
+          echo "tags=$TAGS" >> $GITHUB_OUTPUT
+          echo "min_version=$MIN_VERSION" >> $GITHUB_OUTPUT
+          echo "tag_name=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Verify release asset
+        run: |
+          HTTP_CODE=$(curl -sL -o /dev/null -w "%{http_code}" "${{ steps.meta.outputs.download_url }}")
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 400 ]; then
+            echo "Download link valid (HTTP $HTTP_CODE)"
+          else
+            echo "Waiting 30s for asset upload..."
+            sleep 30
+            HTTP_CODE=$(curl -sL -o /dev/null -w "%{http_code}" "${{ steps.meta.outputs.download_url }}")
+            if [ "$HTTP_CODE" -ge 400 ]; then
+              echo "Asset not found (HTTP $HTTP_CODE), skipping"
+              exit 1
+            fi
+          fi
+
+      - name: Ensure fork exists
+        id: fork
+        env:
+          GH_TOKEN: ${{ secrets.INDEX_PAT }}
+        run: |
+          PAT_USER=$(curl -sS -H "Authorization: token ${GH_TOKEN}" https://api.github.com/user | jq -r '.login')
+          FORK_REPO="${PAT_USER}/${{ env.INDEX_REPO_NAME }}"
+          echo "pat_user=$PAT_USER" >> $GITHUB_OUTPUT
+          echo "fork_repo=$FORK_REPO" >> $GITHUB_OUTPUT
+
+          HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" -H "Authorization: token ${GH_TOKEN}" "https://api.github.com/repos/${FORK_REPO}")
+          if [ "$HTTP_CODE" != "200" ]; then
+            curl -sS -X POST -H "Authorization: token ${GH_TOKEN}" -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ env.INDEX_REPO }}/forks" -d '{"default_branch_only": true}'
+            sleep 10
+          fi
+
+      - name: Sync fork
+        env:
+          GH_TOKEN: ${{ secrets.INDEX_PAT }}
+        run: |
+          curl -sS -X POST -H "Authorization: token ${GH_TOKEN}" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ steps.fork.outputs.fork_repo }}/merge-upstream" \
+            -d '{"branch": "${{ env.INDEX_BRANCH }}"}'
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.INDEX_REPO }}
+          ref: ${{ env.INDEX_BRANCH }}
+          path: plugin-index
+          token: ${{ secrets.INDEX_PAT }}
+
+      - name: Update index
+        env:
+          PLUGIN_ID: ${{ steps.meta.outputs.plugin_id }}
+          PLUGIN_NAME: ${{ steps.meta.outputs.plugin_name }}
+          PLUGIN_VERSION: ${{ steps.meta.outputs.version }}
+          PLUGIN_DESCRIPTION: ${{ steps.meta.outputs.description }}
+          PLUGIN_AUTHOR: ${{ steps.meta.outputs.author }}
+          PLUGIN_HOMEPAGE: ${{ steps.meta.outputs.homepage }}
+          PLUGIN_DOWNLOAD_URL: ${{ steps.meta.outputs.download_url }}
+          PLUGIN_TAGS: ${{ steps.meta.outputs.tags }}
+          PLUGIN_MIN_VERSION: ${{ steps.meta.outputs.min_version }}
+          INDEX_FILE_NAME: ${{ env.INDEX_FILE }}
+        run: |
+          cd plugin-index
+          node -e "
+          const fs = require('fs');
+          const data = JSON.parse(fs.readFileSync(process.env.INDEX_FILE_NAME, 'utf-8'));
+          const id = process.env.PLUGIN_ID;
+          const entry = {
+            id, name: process.env.PLUGIN_NAME, version: process.env.PLUGIN_VERSION,
+            description: process.env.PLUGIN_DESCRIPTION, author: process.env.PLUGIN_AUTHOR,
+            homepage: process.env.PLUGIN_HOMEPAGE, downloadUrl: process.env.PLUGIN_DOWNLOAD_URL,
+            tags: JSON.parse(process.env.PLUGIN_TAGS), minVersion: process.env.PLUGIN_MIN_VERSION
+          };
+          const idx = data.plugins.findIndex(p => p.id === id);
+          if (idx >= 0) data.plugins[idx] = entry; else data.plugins.push(entry);
+          data.updateTime = new Date().toISOString().replace(/\.\d{3}Z/, 'Z');
+          fs.writeFileSync(process.env.INDEX_FILE_NAME, JSON.stringify(data, null, 2) + '\n');
+          console.log((idx >= 0 ? 'Updated' : 'Added') + ': ' + id + ' v' + process.env.PLUGIN_VERSION);
+          "
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          path: plugin-index
+          token: ${{ secrets.INDEX_PAT }}
+          push-to-fork: ${{ steps.fork.outputs.fork_repo }}
+          commit-message: "chore: update ${{ steps.meta.outputs.plugin_id }} to v${{ steps.meta.outputs.version }}"
+          branch: "auto-update/${{ steps.meta.outputs.plugin_id }}-v${{ steps.meta.outputs.version }}"
+          delete-branch: true
+          title: "🔌 [${{ steps.meta.outputs.plugin_name }}] 更新至 v${{ steps.meta.outputs.version }}"
+          body: |
+            ## 🤖 自动更新插件索引
+
+            | 字段 | 值 |
+            |------|-----|
+            | **插件 ID** | `${{ steps.meta.outputs.plugin_id }}` |
+            | **版本** | v${{ steps.meta.outputs.version }} |
+            | **作者** | ${{ steps.meta.outputs.author }} |
+            | **下载链接** | ${{ steps.meta.outputs.download_url }} |
+
+            > 此 PR 由 CI 自动创建，来源: [${{ github.repository }}](${{ steps.meta.outputs.homepage }})
+          labels: |
+            自动更新
+            插件更新
