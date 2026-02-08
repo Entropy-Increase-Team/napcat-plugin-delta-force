@@ -55,7 +55,9 @@ jobs:
 
       - name: Delete old latest tag
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-        run: git push origin :refs/tags/latest || true
+        run: |
+          git tag -d latest || true
+          git push origin :refs/tags/latest || true
 
       - name: Create Release (push to main)
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
