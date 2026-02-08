@@ -64,6 +64,7 @@ export interface PuppeteerStatus {
 
 /**
  * 检查 Puppeteer 插件状态
+ * 与启动日志逻辑一致：能成功请求到 Puppeteer API 即视为已连接
  */
 export async function checkPuppeteerStatus (): Promise<PuppeteerStatus> {
   try {
@@ -72,10 +73,11 @@ export async function checkPuppeteerStatus (): Promise<PuppeteerStatus> {
       return { connected: false, message: `Puppeteer 插件响应异常: ${response.status}` };
     }
     const result = await response.json();
-    if (result.code === 0 && result.data?.browser?.connected) {
-      return { connected: true, message: '浏览器已连接' };
+    // 能成功请求且返回 code=0 即视为已连接（与启动日志判断逻辑一致）
+    if (result.code === 0) {
+      return { connected: true, message: '渲染服务已连接' };
     }
-    return { connected: false, message: result.data?.browser?.mode || '浏览器未连接' };
+    return { connected: false, message: result.message || '渲染服务异常' };
   } catch (error) {
     return { connected: false, message: `无法连接 Puppeteer 插件: ${error}` };
   }

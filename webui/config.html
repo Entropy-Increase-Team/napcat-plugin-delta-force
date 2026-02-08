@@ -4,6 +4,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>三角洲行动 · 配置面板</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -603,6 +606,7 @@
             <div class="glass-card p-6">
               <h3 class="font-bold text-lg mb-4">关于</h3>
               <div class="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                <p>• 版本: <span class="text-primary font-medium" id="aboutVersion">-</span></p>
                 <p>• 发送 <code class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">三角洲帮助</code> 查看所有命令</p>
                 <p>• 发送 <code class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">三角洲登录</code> 扫码绑定账号</p>
                 <p>• 作者: <span class="font-medium">冷曦</span></p>
@@ -1493,39 +1497,39 @@
       setTimeout(() => { toast.style.animation = 'slideIn 0.3s ease reverse'; setTimeout(() => toast.remove(), 300); }, 3000);
     }
 
+    // 安全设置元素属性（元素不存在不报错）
+    function $set (id, prop, val) {
+      const el = document.getElementById(id);
+      if (el) el[prop] = val;
+    }
+
     async function refreshStatus () {
       try {
         const res = await fetch(`${API_NO_AUTH}/status`);
         const data = await res.json();
         if (data.code === 0) {
-          document.getElementById('statusDot').className = 'status-dot connected';
-          document.getElementById('statusText').textContent = '运行中';
+          $set('statusDot', 'className', 'status-dot connected');
+          $set('statusText', 'textContent', '运行中');
           const version = 'v' + (data.data?.version || '1.0.0');
-          document.getElementById('statVersion').textContent = version;
-          document.getElementById('aboutVersion').textContent = version;
+          $set('statVersion', 'textContent', version);
+          $set('aboutVersion', 'textContent', version);
 
           const puppeteerConnected = data.data?.puppeteer?.connected;
-          document.getElementById('statPuppeteer').innerHTML = puppeteerConnected
+          $set('statPuppeteer', 'innerHTML', puppeteerConnected
             ? '<span class="text-green-500">已连接</span>'
-            : '<span class="text-red-500">未连接</span>';
+            : '<span class="text-red-500">未连接</span>');
 
-          // 显示/隐藏 Puppeteer 安装提示
           const warningEl = document.getElementById('puppeteerWarning');
-          if (warningEl) {
-            warningEl.style.display = puppeteerConnected ? 'none' : 'block';
-          }
+          if (warningEl) warningEl.style.display = puppeteerConnected ? 'none' : 'block';
 
           showToast('状态刷新成功', 'success');
         }
       } catch (e) {
-        document.getElementById('statusDot').className = 'status-dot disconnected';
-        document.getElementById('statusText').textContent = '离线';
-        // 离线时也显示 Puppeteer 提示
+        $set('statusDot', 'className', 'status-dot disconnected');
+        $set('statusText', 'textContent', '离线');
         const warningEl = document.getElementById('puppeteerWarning');
-        if (warningEl) {
-          warningEl.style.display = 'block';
-        }
-        showToast('连接失败', 'error');
+        if (warningEl) warningEl.style.display = 'block';
+        showToast('连接失败: ' + e, 'error');
       }
     }
 

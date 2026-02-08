@@ -59,7 +59,7 @@ interface HelpConfig {
 function getHelpConfig (): HelpConfig {
   const config = pluginState.getConfig();
   const style = config.help_style || {};
-  
+
   return {
     title: style.title || '三角洲行动 帮助',
     subTitle: style.subTitle || 'DeltaForce-Plugin HELP',
@@ -86,7 +86,7 @@ function getHelpConfig (): HelpConfig {
 /** 获取帮助列表 - 优先使用保存的配置，否则使用默认列表 */
 function getHelpList (): { left: HelpGroup[]; right: HelpGroup[]; fullWidth: HelpGroup[]; } {
   const config = pluginState.getConfig();
-  
+
   // 如果有保存的自定义帮助列表，直接使用
   if (config.help_list && (config.help_list.left || config.help_list.right || config.help_list.fullWidth)) {
     return {
@@ -95,7 +95,7 @@ function getHelpList (): { left: HelpGroup[]; right: HelpGroup[]; fullWidth: Hel
       right: config.help_list.right || [],
     };
   }
-  
+
   // 否则返回默认列表
   return getDefaultHelpList();
 }
@@ -375,8 +375,8 @@ function generateHelpHtml (): string {
   const hasCustomBg = fs.existsSync(path.join(customImgDir, 'bg.jpg'));
   const hasCustomIcon = fs.existsSync(path.join(customImgDir, 'icon.png'));
   const apiPrefix = getApiUrlPrefix();
-  
-  const bgPath = hasCustomBg 
+
+  const bgPath = hasCustomBg
     ? `${apiPrefix}/help/custom-image?type=bg`
     : `${staticPrefix}/help/imgs/default/bg.jpg`;
   const iconPath = hasCustomIcon
@@ -626,21 +626,21 @@ export async function help (msg: OB11Message): Promise<boolean> {
 async function sendTextHelp (msg: OB11Message): Promise<void> {
   const prefix = getPrefixes()[0] || '三角洲';
   const messages: string[] = [];
-  
+
   messages.push(`🎮 三角洲行动 - 帮助菜单`);
-  
+
   messages.push(`📋 账号管理\n${prefix}登录 - 扫码登录\n${prefix}账号 - 账号列表\n${prefix}账号切换 <序号> - 切换账号\n${prefix}信息 - 个人信息\n${prefix}uid - 查询UID`);
-  
+
   messages.push(`📊 数据查询\n${prefix}数据 [模式] - 数据统计\n${prefix}货币 - 货币查询\n${prefix}战绩 [模式] - 战绩查询`);
-  
+
   messages.push(`📰 战报推送\n${prefix}日报 - 日报查询\n${prefix}周报 - 周报查询\n${prefix}每日密码 - 今日密码`);
-  
+
   messages.push(`🔧 实用工具\n${prefix}ai锐评 - AI评价\n${prefix}特勤处状态 - 特勤处查询\n${prefix}干员 <名称> - 干员查询`);
-  
+
   messages.push(`🎵 娱乐功能\n${prefix}语音 [角色名] - 播放语音\n${prefix}鼠鼠音乐 - 播放音乐\n${prefix}tts [角色] [情感] 文本 - TTS语音`);
-  
+
   messages.push(`插件反馈群：631348711 | API交流群：932459332`);
-  
+
   await makeForwardMsg(msg, messages, { nickname: '帮助菜单' });
 }
 
