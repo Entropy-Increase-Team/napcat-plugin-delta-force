@@ -2,16 +2,22 @@ name: Build and Release
 
 on:
   push:
-    branches: [main, master]
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  actions: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,8 +34,21 @@ jobs:
       - run: pnpm install --no-frozen-lockfile
 
       - name: Get version
-        id: ver
-        run: echo "version=v$(node -e "console.log(require('./package.json').version)")" >> $GITHUB_OUTPUT
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/}"
+          else
+            VERSION="v$(node -e "console.log(require('./package.json').version)")"
+          fi
+          CLEAN_VERSION=$(echo $VERSION | sed 's/^v//')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "clean_version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update package.json version
+        run: npm version ${{ steps.version.outputs.clean_version }} --no-git-tag-version --allow-same-version
 
       - run: pnpm build
 
@@ -42,76 +61,51 @@ jobs:
           cp -r dist/resources release/
           cd release && zip -r ../napcat-plugin-delta-force.zip .
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: napcat-plugin-delta-force
-          path: napcat-plugin-delta-force.zip
-
-      - name: Delete old latest release
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-        run: gh release delete latest --yes || true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Delete old latest tag
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      - name: Collect git log
+        id: gitlog
         run: |
-          git tag -d latest || true
-          git push origin :refs/tags/latest || true
-
-      - name: Create Release (push to main)
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-        run: |
-          gh release create latest napcat-plugin-delta-force.zip \
-            --title "${{ steps.ver.outputs.version }}" \
-            --notes "自动构建 ${{ steps.ver.outputs.version }}" \
-            --latest
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Auto tag version
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-        id: autotag
-        run: |
-          TAG="${{ steps.ver.outputs.version }}"
-          if ! git rev-parse "$TAG" >/dev/null 2>&1; then
-            git tag "$TAG"
-            git push origin "$TAG"
-            echo "created=true" >> $GITHUB_OUTPUT
-            echo "Created tag $TAG"
-          else
-            echo "created=false" >> $GITHUB_OUTPUT
-            echo "Tag $TAG already exists, skipping"
+          CURRENT_TAG="${{ steps.version.outputs.version }}"
+          git fetch --tags --force
+          PREV_TAG=$(git tag -l "v*" --sort=version:refname | grep -v "$CURRENT_TAG" | tail -1)
+          if [ -z "$PREV_TAG" ]; then
+            PREV_TAG=$(git rev-list --max-parents=0 HEAD | head -1)
           fi
+          COMMITS=$(git log --pretty=format:'- %s (%h)' "$PREV_TAG"..HEAD 2>/dev/null || git log --pretty=format:'- %s (%h)' -10)
+          echo "$COMMITS" > commits.txt
+          echo "current_tag=$CURRENT_TAG" >> $GITHUB_OUTPUT
+          echo "prev_tag=$PREV_TAG" >> $GITHUB_OUTPUT
 
-      - name: Create Version Release (auto tag)
-        if: steps.autotag.outputs.created == 'true'
+      - name: Generate Release Note
         run: |
-          gh release create "${{ steps.ver.outputs.version }}" napcat-plugin-delta-force.zip \
-            --title "${{ steps.ver.outputs.version }}" \
-            --generate-notes
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG="${{ steps.gitlog.outputs.current_tag }}"
+          COMMITS=$(cat commits.txt)
+          echo "## $TAG" > CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          echo "### 更新内容" >> CHANGELOG.md
+          echo "$COMMITS" >> CHANGELOG.md
 
-      - name: Create Version Release (manual tag)
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Release ${{ steps.version.outputs.version }}
+          body_path: CHANGELOG.md
+          draft: false
           files: napcat-plugin-delta-force.zip
-          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Trigger index update
-        if: steps.autotag.outputs.created == 'true' || startsWith(github.ref, 'refs/tags/v')
+        if: success()
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const version = '${{ steps.ver.outputs.version }}' || '${{ github.ref_name }}';
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'update-index.yml',
               ref: 'main',
-              inputs: { version }
+              inputs: { version: '${{ steps.version.outputs.version }}' }
             })
-            console.log('Triggered index update for ' + version)
+            console.log('Triggered update-index.yml')

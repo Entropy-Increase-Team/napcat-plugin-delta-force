@@ -16,15 +16,11 @@
 
 ## 安装插件
 
-### 方式一：下载 Release
-
-前往napcat插件市场中搜索该三角洲行动，安装即可
-
-### 方式二：下载 Release
+### 方式一：Napcat插件商场下载
 
 前往 [Releases](https://github.com/Entropy-Increase-Team/napcat-plugin-delta-force/releases) 下载最新的 `napcat-plugin-delta-force.zip`，解压后放入 NapCat 的插件目录即可。
 
-### 方式三：手动构建
+### 方式二：手动构建
 
 ```bash
 git clone https://github.com/Entropy-Increase-Team/napcat-plugin-delta-force.git
@@ -115,12 +111,26 @@ pnpm build
 ## 鸣谢
 
 - **API支持**：感谢[浅巷墨黎](https://github.com/dnyo666)整理并提供的三角洲行动API接口文档及后端
+- **原版插件**：[delta-force-plugin](https://github.com/dnyo666/delta-force-plugin)（Yunzai版本）
+- **API功能参考**：
+  - [deltaforce-酷曦科技](https://github.com/coolxitech/deltaforce) 参考QQ、微信等登陆部分
 - **代码贡献**：
+  - [@浅巷墨黎（Dnyo666）](https://github.com/dnyo666)：原版项目主要开发者
   - [@冷曦](https://github.com/Entropy-Increase-Team)：NapCat 版本迁移与开发
+  - [@MapleLeaf](https://github.com/MapleLeaf2007)：后端基础架构开发
+  - [@Admilk](https://github.com/Admilkk)：后端基础架构开发
 - **特别鸣谢**：
   - [NapCatQQ](https://github.com/NapNeko/NapCatQQ)：NapCat机器人框架
   - [三角洲行动官方](https://df.qq.com)：游戏数据支持
   - [繁星攻略组](https://space.bilibili.com/3546853731731919)：授权提供计算器算法和数据
+
+## 其他框架
+
+- **云崽**：[delta-force-plugin](https://github.com/Dnyo666/delta-force-plugin)
+- **NapCat**：[napcat-plugin-delta-force](https://github.com/Entropy-Increase-Team/napcat-plugin-delta-force)
+- **Nonebot2**：[nonebot-plugin-delta-force](https://github.com/Entropy-Increase-Team/nonebot-plugin-delta-force)
+- **Koishi**：[koishi-plugin-delta-force](https://github.com/Entropy-Increase-Team/koishi-plugin-delta-force)
+- **Karin**：[karin-plugin-delta-force](https://github.com/Entropy-Increase-Team/karin-plugin-delta-force)
 
 ## 支持与贡献
 
