@@ -8,19 +8,9 @@ import type { CommandDef } from '../utils/command';
 import { createApi } from '../core/api';
 import { pluginState } from '../core/state';
 import { reply, getUserId, sendAudio, makeForwardMsg } from '../utils/message';
-import { handleApiError as _handleApiError } from '../utils/error-handler';
+import { checkApiError, sleep } from '../utils/error-handler';
 import fs from 'node:fs';
 import path from 'node:path';
-
-/** 错误处理包装 */
-async function checkApiError (res: any, msg: OB11Message): Promise<boolean> {
-  const result = _handleApiError(res);
-  if (result.handled && result.message) {
-    await reply(msg, result.message);
-    return true;
-  }
-  return result.handled;
-}
 
 /** 命令定义 */
 export const commands: CommandDef[] = [
@@ -435,11 +425,6 @@ async function parseTtsParams (params: string): Promise<{
   }
 
   return result;
-}
-
-/** 延时函数 */
-function sleep (ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 export default {

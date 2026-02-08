@@ -209,4 +209,22 @@ export async function renderOrForward (
   await makeForwardMsg(msg, texts, { nickname: forwardNickname });
 }
 
-export default { handleApiError, isApiSuccess, getApiErrorMessage, ErrorType, safeHandle, renderOrForward };
+/**
+ * 检查 API 错误并自动回复（通用包装）
+ * @returns true 表示有错误已处理
+ */
+export async function checkApiError (res: any, msg: OB11Message): Promise<boolean> {
+  const result = handleApiError(res);
+  if (result.handled && result.message) {
+    await reply(msg, result.message);
+    return true;
+  }
+  return result.handled;
+}
+
+/** 延时工具 */
+export function sleep (ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+export default { handleApiError, isApiSuccess, getApiErrorMessage, ErrorType, safeHandle, renderOrForward, checkApiError, sleep };

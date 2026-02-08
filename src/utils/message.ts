@@ -223,42 +223,22 @@ export async function makeForwardMsg (input: OB11Message | MsgContext, messages:
   }
 }
 
-/**
- * 发送群消息
- */
-export async function sendGroupMsg (groupId: string | number, message: string | MessageSegment[]): Promise<any> {
+/** 发送消息到指定目标（统一群聊/私聊） */
+async function sendDirectMsg (type: 'group' | 'private', targetId: string | number, message: string | MessageSegment[]): Promise<any> {
   try {
     const ctx = pluginState.getContext();
     if (!ctx) throw new Error('上下文未初始化');
-
-    return await ctx.actions.get('send_msg')?.handle({
-      message_type: 'group',
-      group_id: Number(groupId),
-      message,
-    });
+    const params = type === 'group'
+      ? { message_type: 'group' as const, group_id: Number(targetId), message }
+      : { message_type: 'private' as const, user_id: Number(targetId), message };
+    return await ctx.actions.get('send_msg')?.handle(params);
   } catch (error) {
-    pluginState.log('error', '发送群消息失败:', error);
+    pluginState.log('error', `发送${type === 'group' ? '群' : '私聊'}消息失败:`, error);
     return null;
   }
 }
 
-/**
- * 发送私聊消息
- */
-export async function sendPrivateMsg (userId: string | number, message: string | MessageSegment[]): Promise<any> {
-  try {
-    const ctx = pluginState.getContext();
-    if (!ctx) throw new Error('上下文未初始化');
-
-    return await ctx.actions.get('send_msg')?.handle({
-      message_type: 'private',
-      user_id: Number(userId),
-      message,
-    });
-  } catch (error) {
-    pluginState.log('error', '发送私聊消息失败:', error);
-    return null;
-  }
-}
+export const sendGroupMsg = (groupId: string | number, message: string | MessageSegment[]) => sendDirectMsg('group', groupId, message);
+export const sendPrivateMsg = (userId: string | number, message: string | MessageSegment[]) => sendDirectMsg('private', userId, message);
 
 export default { reply, replyImage, replyAt, recallMsg, isGroupMsg, getUserId, sendAudio, makeForwardMsg, sendGroupMsg, sendPrivateMsg };

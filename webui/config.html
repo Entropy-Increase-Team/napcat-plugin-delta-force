@@ -301,6 +301,26 @@
       letter-spacing: 0.5px;
       margin-bottom: 12px;
     }
+
+    /* 调试日志样式 */
+    .log-entry { padding: 4px 8px; border-bottom: 1px solid rgba(0,0,0,0.04); white-space: pre-wrap; word-break: break-all; }
+    .dark .log-entry { border-bottom-color: rgba(255,255,255,0.04); }
+    .log-entry:hover { background: rgba(249,115,22,0.05); }
+    .log-entry.level-error { color: #ef4444; background: rgba(239,68,68,0.05); }
+    .log-entry.level-warn { color: #f59e0b; }
+    .log-entry.level-info { color: #6b7280; }
+    .dark .log-entry.level-info { color: #9ca3af; }
+    .log-entry.level-debug { color: #8b5cf6; }
+    .log-entry.level-api { color: #06b6d4; }
+    .log-time { color: #9ca3af; margin-right: 8px; user-select: none; }
+    .log-level { display: inline-block; width: 44px; font-weight: 600; text-transform: uppercase; user-select: none; }
+    .log-api-detail { margin-top: 4px; padding: 6px 10px; background: rgba(0,0,0,0.03); border-radius: 6px; font-size: 11px; cursor: pointer; }
+    .dark .log-api-detail { background: rgba(255,255,255,0.03); }
+    .log-api-detail summary { color: #F97316; font-weight: 500; cursor: pointer; user-select: none; }
+    .log-api-section { margin-top: 4px; }
+    .log-api-section-title { color: #F97316; font-weight: 600; margin-bottom: 2px; }
+    .log-api-content { color: #6b7280; max-height: 200px; overflow-y: auto; }
+    .dark .log-api-content { color: #9ca3af; }
   </style>
 </head>
 
@@ -359,14 +379,17 @@
           </svg>
           <span>帮助设置</span>
         </div>
-        <div class="sidebar-item" onclick="switchPage('settings', this)">
+        <div class="sidebar-item" onclick="switchPage('debug', this)">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path
-              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
-            </path>
+            <path d="M12 20h.01"></path>
+            <path d="M8 16l-2 2"></path><path d="M16 16l2 2"></path>
+            <path d="M12 12v.01"></path>
+            <path d="M8 8l-2-2"></path><path d="M16 8l2-2"></path>
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2"></path><path d="M12 20v2"></path>
+            <path d="M2 12h2"></path><path d="M20 12h2"></path>
           </svg>
-          <span>其他设置</span>
+          <span>调试日志</span>
         </div>
       </nav>
 
@@ -481,13 +504,43 @@
               </div>
             </div>
 
-            <div class="glass-card p-6">
+            <div class="glass-card p-6 mb-6">
+              <h3 class="font-bold text-lg mb-4">运行设置</h3>
+              <div class="space-y-4">
+                <div class="config-row border-b border-gray-100 dark:border-gray-700 pb-4">
+                  <div>
+                    <div class="font-medium">WebSocket 自动连接</div>
+                    <div class="text-sm text-gray-500">启动时自动连接 WebSocket（用于战绩推送）</div>
+                  </div>
+                  <div class="toggle" id="wsAutoConnect" onclick="toggleSwitch(this)"></div>
+                </div>
+                <div class="config-row">
+                  <div>
+                    <div class="font-medium">调试模式</div>
+                    <div class="text-sm text-gray-500">显示详细调试日志（输出到框架日志）</div>
+                  </div>
+                  <div class="toggle" id="debugMode" onclick="toggleSwitch(this)"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="glass-card p-6 mb-6">
               <h3 class="font-bold text-lg mb-4">使用说明</h3>
               <div class="text-sm text-gray-600 dark:text-gray-400 space-y-2">
                 <p>• 发送 <code class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">三角洲帮助</code> 查看所有命令</p>
                 <p>• 发送 <code class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">三角洲登录</code> 扫码绑定账号</p>
                 <p>• 插件反馈群: <span class="text-primary font-medium">631348711</span></p>
                 <p>• API交流群: <span class="text-primary font-medium">932459332</span></p>
+              </div>
+            </div>
+
+            <div class="glass-card p-6">
+              <h3 class="font-bold text-lg mb-4">关于</h3>
+              <div class="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                <p>• 版本: <span class="text-primary font-medium" id="aboutVersion">v1.0.0</span></p>
+                <p>• 作者: <span class="font-medium">冷曦</span></p>
+                <p>• GitHub: <a href="https://github.com/Entropy-Increase-Team/napcat-plugin-delta-force"
+                    target="_blank" class="text-primary hover:underline">napcat-plugin-delta-force</a></p>
               </div>
             </div>
           </div>
@@ -1267,35 +1320,38 @@
           </div>
 
           <!-- Page: Settings -->
-          <div id="page-settings" class="page-content">
-            <div class="glass-card p-6 mb-6">
-              <div class="space-y-4">
-                <div class="config-row border-b border-gray-100 dark:border-gray-700 pb-4">
-                  <div>
-                    <div class="font-medium">WebSocket 自动连接</div>
-                    <div class="text-sm text-gray-500">启动时自动连接 WebSocket（用于战绩推送）</div>
-                  </div>
-                  <div class="toggle" id="wsAutoConnect" onclick="toggleSwitch(this)"></div>
+          <!-- page-settings 已合并到 page-status -->
+          <div id="page-settings" class="page-content"></div>
+
+          <!-- 调试日志页面 -->
+          <div id="page-debug" class="page-content">
+            <div class="glass-card p-6 mb-4">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="font-bold text-lg">🔍 调试日志</h3>
+                  <p class="text-sm text-gray-500 mt-1">开启后所有日志和API请求详情将实时显示在此面板，不再输出到框架日志</p>
                 </div>
-                <div class="config-row">
-                  <div>
-                    <div class="font-medium">调试模式</div>
-                    <div class="text-sm text-gray-500">显示详细调试日志</div>
-                  </div>
-                  <div class="toggle" id="debugMode" onclick="toggleSwitch(this)"></div>
+                <div class="flex items-center gap-3">
+                  <span class="text-sm" id="debugStatusText">已关闭</span>
+                  <div class="toggle" id="webDebugToggle" onclick="toggleWebDebug(this)"></div>
                 </div>
               </div>
+              <div class="flex gap-2 flex-wrap">
+                <button onclick="clearDebugLogs()" class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition">清空日志</button>
+                <button onclick="toggleAutoScroll()" id="btnAutoScroll" class="px-3 py-1.5 text-sm bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition">⬇ 自动滚动: 开</button>
+                <select id="debugFilter" onchange="applyDebugFilter()" class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 rounded-lg border-0 outline-none">
+                  <option value="all">全部日志</option>
+                  <option value="api">仅API请求</option>
+                  <option value="error">仅错误</option>
+                  <option value="warn">警告+错误</option>
+                  <option value="debug">仅调试</option>
+                </select>
+                <span class="text-xs text-gray-400 self-center ml-auto" id="debugLogCount">0 条</span>
+              </div>
             </div>
-
-            <div class="glass-card p-6">
-              <h3 class="font-bold text-lg mb-4">关于</h3>
-              <div class="text-sm text-gray-600 dark:text-gray-400 space-y-2">
-                <p>• 版本: <span class="text-primary font-medium" id="aboutVersion">v1.0.0</span></p>
-                <p>• 作者: <span class="font-medium">冷曦</span></p>
-                <p>• 插件反馈群: <span class="text-primary font-medium">631348711</span></p>
-                <p>• API交流群: <span class="text-primary font-medium">932459332</span></p>
-                <p>• GitHub: <a href="https://github.com/Entropy-Increase-Team/napcat-plugin-delta-force"
-                    target="_blank" class="text-primary hover:underline">napcat-plugin-delta-force</a></p>
+            <div class="glass-card" style="height:calc(100vh - 280px);display:flex;flex-direction:column;">
+              <div id="debugLogContainer" class="flex-1 overflow-y-auto custom-scrollbar p-4 font-mono text-xs leading-relaxed" style="background:rgba(0,0,0,0.03);">
+                <div class="text-center text-gray-400 py-12" id="debugEmpty">开启调试模式后，日志将在此实时显示</div>
               </div>
             </div>
           </div>
@@ -2592,6 +2648,195 @@
         showToast('重置失败: ' + e.message, 'error');
       }
     }
+
+    // ==================== 调试日志 ====================
+    let debugLastId = 0;
+    let debugAutoScroll = true;
+    let debugPollTimer = null;
+    let debugFilter = 'all';
+
+    async function toggleWebDebug (el) {
+      const enabling = !el.classList.contains('active');
+      try {
+        const res = await fetch(`${API_NO_AUTH}/debug/toggle`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: enabling }),
+        });
+        const data = await res.json();
+        if (data.code === 0) {
+          if (data.data.enabled) {
+            el.classList.add('active');
+            document.getElementById('debugStatusText').textContent = '运行中';
+            document.getElementById('debugStatusText').className = 'text-sm text-green-500 font-medium';
+            startDebugPoll();
+            showToast('调试模式已开启', 'success');
+          } else {
+            el.classList.remove('active');
+            document.getElementById('debugStatusText').textContent = '已关闭';
+            document.getElementById('debugStatusText').className = 'text-sm text-gray-500';
+            stopDebugPoll();
+            showToast('调试模式已关闭', 'info');
+          }
+        }
+      } catch (e) { showToast('操作失败: ' + e, 'error'); }
+    }
+
+    async function clearDebugLogs () {
+      try {
+        await fetch(`${API_NO_AUTH}/debug/clear`, { method: 'POST' });
+        debugLastId = 0;
+        document.getElementById('debugLogContainer').innerHTML = '<div class="text-center text-gray-400 py-12" id="debugEmpty">日志已清空</div>';
+        document.getElementById('debugLogCount').textContent = '0 条';
+        showToast('日志已清空', 'success');
+      } catch (e) { showToast('清空失败', 'error'); }
+    }
+
+    function toggleAutoScroll () {
+      debugAutoScroll = !debugAutoScroll;
+      const btn = document.getElementById('btnAutoScroll');
+      btn.textContent = debugAutoScroll ? '⬇ 自动滚动: 开' : '⬇ 自动滚动: 关';
+      btn.className = debugAutoScroll
+        ? 'px-3 py-1.5 text-sm bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition'
+        : 'px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition';
+    }
+
+    function applyDebugFilter () {
+      debugFilter = document.getElementById('debugFilter').value;
+      const container = document.getElementById('debugLogContainer');
+      container.querySelectorAll('.log-entry').forEach(el => {
+        const level = el.dataset.level;
+        let show = true;
+        if (debugFilter === 'api') show = level === 'api';
+        else if (debugFilter === 'error') show = level === 'error';
+        else if (debugFilter === 'warn') show = level === 'warn' || level === 'error';
+        else if (debugFilter === 'debug') show = level === 'debug';
+        el.style.display = show ? '' : 'none';
+      });
+    }
+
+    function formatLogTime (iso) {
+      const d = new Date(iso);
+      return d.toLocaleTimeString('zh-CN', { hour12: false }) + '.' + String(d.getMilliseconds()).padStart(3, '0');
+    }
+
+    function escapeHtml (s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function renderLogEntry (entry) {
+      const div = document.createElement('div');
+      div.className = `log-entry level-${entry.level}`;
+      div.dataset.level = entry.level;
+
+      let html = `<span class="log-time">${formatLogTime(entry.time)}</span>`;
+      html += `<span class="log-level">${entry.level}</span> `;
+      html += escapeHtml(entry.message);
+
+      // API 请求详情（可展开）
+      if (entry.level === 'api' && (entry.headers || entry.response)) {
+        html += `<details class="log-api-detail">`;
+        html += `<summary>展开请求详情</summary>`;
+        if (entry.headers) {
+          html += `<div class="log-api-section"><div class="log-api-section-title">请求头</div><div class="log-api-content">`;
+          for (const [k, v] of Object.entries(entry.headers)) {
+            // 隐藏 API Key 中间部分
+            const val = k.toLowerCase() === 'authorization' ? v.replace(/(Bearer\s+.{6})(.+)(.{4})/, '$1***$3') : v;
+            html += escapeHtml(k) + ': ' + escapeHtml(val) + '\n';
+          }
+          html += `</div></div>`;
+        }
+        if (entry.body) {
+          html += `<div class="log-api-section"><div class="log-api-section-title">请求体</div><div class="log-api-content">${escapeHtml(entry.body)}</div></div>`;
+        }
+        if (entry.response) {
+          html += `<div class="log-api-section"><div class="log-api-section-title">响应内容 (${entry.status || '-'})</div><div class="log-api-content">`;
+          try {
+            html += escapeHtml(JSON.stringify(JSON.parse(entry.response), null, 2));
+          } catch {
+            html += escapeHtml(entry.response);
+          }
+          html += `</div></div>`;
+        }
+        html += `</details>`;
+      }
+
+      div.innerHTML = html;
+
+      // 应用过滤
+      if (debugFilter !== 'all') {
+        let show = true;
+        if (debugFilter === 'api') show = entry.level === 'api';
+        else if (debugFilter === 'error') show = entry.level === 'error';
+        else if (debugFilter === 'warn') show = entry.level === 'warn' || entry.level === 'error';
+        else if (debugFilter === 'debug') show = entry.level === 'debug';
+        if (!show) div.style.display = 'none';
+      }
+
+      return div;
+    }
+
+    async function fetchDebugLogs () {
+      try {
+        const res = await fetch(`${API_NO_AUTH}/debug/logs?after=${debugLastId}`);
+        const data = await res.json();
+        if (data.code !== 0) return;
+
+        // 更新开关状态
+        const toggle = document.getElementById('webDebugToggle');
+        if (data.data.enabled && !toggle.classList.contains('active')) {
+          toggle.classList.add('active');
+          document.getElementById('debugStatusText').textContent = '运行中';
+          document.getElementById('debugStatusText').className = 'text-sm text-green-500 font-medium';
+        }
+
+        const logs = data.data.logs;
+        if (!logs || logs.length === 0) return;
+
+        const container = document.getElementById('debugLogContainer');
+        // 首次有日志时移除空提示
+        const empty = document.getElementById('debugEmpty');
+        if (empty) empty.remove();
+
+        for (const entry of logs) {
+          container.appendChild(renderLogEntry(entry));
+          if (entry.id > debugLastId) debugLastId = entry.id;
+        }
+
+        // 更新计数
+        const total = container.querySelectorAll('.log-entry').length;
+        document.getElementById('debugLogCount').textContent = total + ' 条';
+
+        // 自动滚动
+        if (debugAutoScroll) {
+          container.scrollTop = container.scrollHeight;
+        }
+      } catch (e) { /* 静默失败 */ }
+    }
+
+    function startDebugPoll () {
+      stopDebugPoll();
+      fetchDebugLogs();
+      debugPollTimer = setInterval(fetchDebugLogs, 1500);
+    }
+
+    function stopDebugPoll () {
+      if (debugPollTimer) { clearInterval(debugPollTimer); debugPollTimer = null; }
+    }
+
+    // 切换到调试页时检查状态并开始轮询
+    const origSwitchPage = switchPage;
+    switchPage = function (pageId, el) {
+      origSwitchPage(pageId, el);
+      if (pageId === 'debug') {
+        // 检查当前状态
+        fetch(`${API_NO_AUTH}/debug/logs?after=0`).then(r => r.json()).then(d => {
+          if (d.data?.enabled) startDebugPoll();
+        }).catch(() => {});
+      } else {
+        // 离开调试页时如果开着就继续后台轮询（保持数据连续性）
+      }
+    };
 
     // 初始化
     refreshStatus();

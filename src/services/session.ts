@@ -123,47 +123,24 @@ export function refreshSessionTimeout (userId: string, msg: OB11Message): void {
   }
 }
 
-/**
- * 创建伤害计算会话
- */
-export function createDamageSession (userId: string): SessionData {
-  const session: SessionData = {
-    type: 'damage',
-    step: 'mode',
-    data: {},
-    lastUpdate: Date.now(),
-  };
+/** 初始步骤映射 */
+const INITIAL_STEPS: Record<SessionType, string> = {
+  damage: 'mode',
+  readiness: 'target',
+  repair: 'repair_mode',
+};
+
+/** 创建指定类型的计算会话 */
+export function createSession (userId: string, type: SessionType): SessionData {
+  const session: SessionData = { type, step: INITIAL_STEPS[type], data: {}, lastUpdate: Date.now() };
   setSession(userId, session);
   return session;
 }
 
-/**
- * 创建战备计算会话
- */
-export function createReadinessSession (userId: string): SessionData {
-  const session: SessionData = {
-    type: 'readiness',
-    step: 'target',
-    data: {},
-    lastUpdate: Date.now(),
-  };
-  setSession(userId, session);
-  return session;
-}
-
-/**
- * 创建维修计算会话
- */
-export function createRepairSession (userId: string): SessionData {
-  const session: SessionData = {
-    type: 'repair',
-    step: 'repair_mode',
-    data: {},
-    lastUpdate: Date.now(),
-  };
-  setSession(userId, session);
-  return session;
-}
+// 向后兼容
+export const createDamageSession = (userId: string) => createSession(userId, 'damage');
+export const createReadinessSession = (userId: string) => createSession(userId, 'readiness');
+export const createRepairSession = (userId: string) => createSession(userId, 'repair');
 
 export default {
   getSession,
@@ -175,6 +152,7 @@ export default {
   clearSessionTimeout,
   endSession,
   refreshSessionTimeout,
+  createSession,
   createDamageSession,
   createReadinessSession,
   createRepairSession,

@@ -47,6 +47,25 @@ interface TokenData {
   groupTokens: Record<string, string>;
 }
 
+/** 调试日志条目 */
+export interface DebugLogEntry {
+  id: number;
+  time: string;
+  level: 'debug' | 'info' | 'warn' | 'error' | 'api';
+  message: string;
+  /** API 请求专用字段 */
+  method?: string;
+  url?: string;
+  headers?: Record<string, string>;
+  body?: string;
+  status?: number;
+  response?: string;
+  duration?: number;
+}
+
+/** 日志缓冲区最大条目数 */
+const MAX_LOG_ENTRIES = 500;
+
 /** 插件状态类 */
 class PluginState {
   /** 插件名称 */
@@ -71,6 +90,12 @@ class PluginState {
   private ctx: NapCatPluginContext | null = null;
   /** 调试模式 */
   debugMode: boolean = false;
+  /** Web 调试模式（日志输出到 web 面板而非框架） */
+  webDebugMode: boolean = false;
+  /** Web 调试日志缓冲区 */
+  private debugLogs: DebugLogEntry[] = [];
+  /** 日志ID计数器 */
+  private logIdCounter: number = 0;
   /** 用户 Token 缓存 (userId -> token) */
   private tokenCache: Map<string, string> = new Map();
   /** 分组 Token 缓存 (userId:group -> token) */
@@ -210,6 +235,19 @@ class PluginState {
   /** 日志输出 */
   log (level: 'debug' | 'info' | 'warn' | 'error', ...args: unknown[]): void {
     const prefix = `[${this.pluginName}]`;
+    const msg = args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' ');
+
+    // Web 调试模式：所有日志写入缓冲区
+    if (this.webDebugMode) {
+      this.pushLog({ level, message: `${prefix} ${msg}` });
+      // web 模式下不输出到框架日志（除了 error 级别始终输出）
+      if (level === 'error' && this.logger) {
+        this.logger.error(prefix, ...args);
+      }
+      return;
+    }
+
+    // 普通模式：输出到框架日志
     if (this.logger) {
       switch (level) {
         case 'debug':
@@ -232,8 +270,79 @@ class PluginState {
 
   /** 调试日志 */
   logDebug (...args: unknown[]): void {
-    if (this.debugMode) {
+    if (this.debugMode || this.webDebugMode) {
       this.log('debug', ...args);
+    }
+  }
+
+  // ==================== Web 调试日志 ====================
+
+  /** 添加日志条目到缓冲区 */
+  pushLog (entry: Partial<DebugLogEntry>): void {
+    const logEntry: DebugLogEntry = {
+      id: ++this.logIdCounter,
+      time: new Date().toISOString(),
+      level: entry.level || 'info',
+      message: entry.message || '',
+      ...entry,
+    };
+    this.debugLogs.push(logEntry);
+    if (this.debugLogs.length > MAX_LOG_ENTRIES) {
+      this.debugLogs.splice(0, this.debugLogs.length - MAX_LOG_ENTRIES);
+    }
+  }
+
+  /** 添加 API 请求日志（详细记录请求头和响应） */
+  pushApiLog (entry: {
+    method: string;
+    url: string;
+    headers: Record<string, string>;
+    body?: string;
+    status?: number;
+    response?: string;
+    duration?: number;
+    error?: string;
+  }): void {
+    if (!this.webDebugMode) return;
+    const statusText = entry.status ? `${entry.status}` : (entry.error ? 'ERR' : '...');
+    this.pushLog({
+      level: 'api',
+      message: `${entry.method} ${entry.url} [${statusText}] ${entry.duration ? entry.duration + 'ms' : ''}`,
+      method: entry.method,
+      url: entry.url,
+      headers: entry.headers,
+      body: entry.body,
+      status: entry.status,
+      response: entry.response?.slice(0, 5000), // 限制响应体大小
+      duration: entry.duration,
+    });
+  }
+
+  /** 获取日志（支持从指定ID之后获取，用于增量拉取） */
+  getDebugLogs (afterId = 0): DebugLogEntry[] {
+    if (afterId <= 0) return [...this.debugLogs];
+    return this.debugLogs.filter(e => e.id > afterId);
+  }
+
+  /** 清空日志 */
+  clearDebugLogs (): void {
+    this.debugLogs = [];
+    this.logIdCounter = 0;
+  }
+
+  /** 切换 Web 调试模式 */
+  setWebDebugMode (enabled: boolean): void {
+    this.webDebugMode = enabled;
+    // 开启时同时启用调试模式（确保 debug 级别日志也会输出）
+    if (enabled) {
+      this.debugMode = true;
+      this.pushLog({ level: 'info', message: '🔍 Web 调试模式已开启 - 所有日志和API请求将在此面板显示' });
+    } else {
+      this.debugMode = this.config.debug === true;
+      // 关闭时把剩余日志输出到框架
+      if (this.logger) {
+        this.logger.info(`[${this.pluginName}]`, 'Web 调试模式已关闭');
+      }
     }
   }
 

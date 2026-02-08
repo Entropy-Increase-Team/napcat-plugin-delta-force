@@ -339,6 +339,31 @@ function registerRoutes (ctx: NapCatPluginContext): void {
     }
   });
 
+  // ==================== 调试日志接口 ====================
+
+  // 获取调试日志（支持增量拉取 ?after=lastId）
+  router.getNoAuth('/debug/logs', (req: any, res: any) => {
+    const afterId = parseInt(req.query?.after) || 0;
+    const logs = pluginState.getDebugLogs(afterId);
+    res.json({ code: 0, data: { logs, enabled: pluginState.webDebugMode } });
+  });
+
+  // 切换 Web 调试模式
+  router.postNoAuth('/debug/toggle', (req: any, res: any) => {
+    const enabled = req.body?.enabled;
+    if (typeof enabled !== 'boolean') {
+      return res.status(400).json({ code: -1, message: '参数 enabled 必须为 boolean' });
+    }
+    pluginState.setWebDebugMode(enabled);
+    res.json({ code: 0, data: { enabled: pluginState.webDebugMode } });
+  });
+
+  // 清空调试日志
+  router.postNoAuth('/debug/clear', (_req: any, res: any) => {
+    pluginState.clearDebugLogs();
+    res.json({ code: 0, message: '日志已清空' });
+  });
+
   // ==================== 需认证接口 ====================
 
   // 获取配置（需认证）

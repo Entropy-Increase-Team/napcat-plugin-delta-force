@@ -117,59 +117,30 @@ class DataManager {
     pluginState.logDebug(`计算器数据加载完成: ${loadedCount}/7 个文件`);
   }
 
+  /** 从 YAML 文件加载 Map 数据（支持数组和对象格式） */
+  private loadYamlMap (filePath: string, target: Map<string, string>): void {
+    if (!fs.existsSync(filePath)) return;
+    const data = YAML.parse(fs.readFileSync(filePath, 'utf-8'));
+    target.clear();
+    if (!data) return;
+    const entries = Array.isArray(data) ? data : Object.entries(data);
+    for (const [id, name] of entries) {
+      target.set(String(id), String(name));
+    }
+  }
+
   /** 加载本地缓存 */
   private loadLocalCache (): void {
     const dataDir = path.join(pluginState.dataPath, 'cache');
-
     try {
-      // 加载地图数据 (格式: { id: name, ... } 或 Map 序列化后的数组 [[id, name], ...])
-      const mapsFile = path.join(dataDir, 'maps.yaml');
-      if (fs.existsSync(mapsFile)) {
-        const mapsData = YAML.parse(fs.readFileSync(mapsFile, 'utf-8'));
-        this.cache.maps.clear();
-        if (mapsData) {
-          if (Array.isArray(mapsData)) {
-            // 数组格式: [[id, name], ...]
-            for (const [id, name] of mapsData) {
-              this.cache.maps.set(String(id), String(name));
-            }
-          } else if (typeof mapsData === 'object') {
-            // 对象格式: { id: name, ... }
-            for (const [id, name] of Object.entries(mapsData)) {
-              this.cache.maps.set(String(id), String(name));
-            }
-          }
-        }
-      }
+      this.loadYamlMap(path.join(dataDir, 'maps.yaml'), this.cache.maps);
+      this.loadYamlMap(path.join(dataDir, 'operators.yaml'), this.cache.operators);
 
-      // 加载干员数据 (格式同地图)
-      const operatorsFile = path.join(dataDir, 'operators.yaml');
-      if (fs.existsSync(operatorsFile)) {
-        const operatorsData = YAML.parse(fs.readFileSync(operatorsFile, 'utf-8'));
-        this.cache.operators.clear();
-        if (operatorsData) {
-          if (Array.isArray(operatorsData)) {
-            for (const [id, name] of operatorsData) {
-              this.cache.operators.set(String(id), String(name));
-            }
-          } else if (typeof operatorsData === 'object') {
-            for (const [id, name] of Object.entries(operatorsData)) {
-              this.cache.operators.set(String(id), String(name));
-            }
-          }
-        }
-      }
-
-      // 加载段位数据 (格式: { sol: { score: name }, tdm: { score: name } })
       const rankFile = path.join(dataDir, 'rankscore.yaml');
       if (fs.existsSync(rankFile)) {
         const rankData = YAML.parse(fs.readFileSync(rankFile, 'utf-8'));
-        if (rankData?.sol && typeof rankData.sol === 'object') {
-          this.cache.rankScoreSol = rankData.sol;
-        }
-        if (rankData?.tdm && typeof rankData.tdm === 'object') {
-          this.cache.rankScoreTdm = rankData.tdm;
-        }
+        if (rankData?.sol && typeof rankData.sol === 'object') this.cache.rankScoreSol = rankData.sol;
+        if (rankData?.tdm && typeof rankData.tdm === 'object') this.cache.rankScoreTdm = rankData.tdm;
       }
 
       pluginState.logDebug('本地缓存加载完成');

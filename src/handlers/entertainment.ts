@@ -7,20 +7,10 @@ import type { OB11Message } from 'napcat-types';
 import { pluginState } from '../core/state';
 import { createApi } from '../core/api';
 import { reply, replyAt, getUserId, isGroupMsg } from '../utils/message';
-import { handleApiError as _handleApiError } from '../utils/error-handler';
+import { checkApiError, sleep } from '../utils/error-handler';
 import type { CommandDef } from '../utils/command';
 import fs from 'node:fs';
 import path from 'node:path';
-
-/** 错误处理包装 */
-async function checkApiError (res: any, msg: OB11Message): Promise<boolean> {
-  const result = _handleApiError(res);
-  if (result.handled && result.message) {
-    await reply(msg, result.message);
-    return true;
-  }
-  return result.handled;
-}
 
 /** TTS 缓存 (userId -> 语音信息) */
 const ttsCache = new Map<string, { audio_url: string; filename: string; localPath?: string; timestamp: number; }>();
@@ -37,11 +27,6 @@ export const commands: CommandDef[] = [
   { keywords: ['tts角色详情'], handler: 'getTtsPresetDetail', name: 'TTS角色详情', hasArgs: true },
   { keywords: ['tts'], handler: 'ttsSynthesize', name: 'TTS语音合成', hasArgs: true },
 ];
-
-/** 延时函数 */
-function sleep (ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 /** 获取缓存目录 */
 function getTtsCacheDir (): string {

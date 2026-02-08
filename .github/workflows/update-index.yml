@@ -1,9 +1,7 @@
 name: 自动更新插件索引
 
-# 当 Release 发布时触发（插件作者 push tag → release.yml 构建发布 → 触发本工作流）
+# 由 release.yml 通过 workflow_dispatch 触发，不监听 release 事件避免重复
 on:
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       version:

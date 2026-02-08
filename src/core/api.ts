@@ -29,17 +29,52 @@ if (typeof process !== 'undefined' && process.env) {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 }
 
-/** 带超时的 fetch */
+/** 带超时的 fetch（web调试时自动记录请求/响应详情） */
 async function fetchWithTimeout (url: string, options: RequestInit, timeout = REQUEST_TIMEOUT): Promise<Response> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
+  const startTime = Date.now();
 
   try {
     const response = await fetch(url, {
       ...options,
       signal: controller.signal,
     });
+
+    // Web 调试模式：记录完整请求和响应
+    if (pluginState.webDebugMode) {
+      const duration = Date.now() - startTime;
+      const headers = options.headers as Record<string, string> || {};
+      // 克隆响应以读取 body（不影响后续消费）
+      const cloned = response.clone();
+      const respText = await cloned.text().catch(() => '<无法读取响应体>');
+      pluginState.pushApiLog({
+        method: options.method || 'GET',
+        url,
+        headers: { ...headers },
+        body: options.body ? String(options.body).slice(0, 2000) : undefined,
+        status: response.status,
+        response: respText.slice(0, 5000),
+        duration,
+      });
+    }
+
     return response;
+  } catch (error: any) {
+    // Web 调试模式：记录失败请求
+    if (pluginState.webDebugMode) {
+      const duration = Date.now() - startTime;
+      const headers = options.headers as Record<string, string> || {};
+      pluginState.pushApiLog({
+        method: options.method || 'GET',
+        url,
+        headers: { ...headers },
+        body: options.body ? String(options.body).slice(0, 2000) : undefined,
+        duration,
+        error: error?.name === 'AbortError' ? '请求超时' : String(error),
+      });
+    }
+    throw error;
   } finally {
     clearTimeout(timeoutId);
   }
