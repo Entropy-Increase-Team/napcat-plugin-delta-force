@@ -14,6 +14,8 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -64,6 +66,18 @@ jobs:
             --latest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Auto tag version
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        run: |
+          TAG="${{ steps.ver.outputs.version }}"
+          if ! git rev-parse "$TAG" >/dev/null 2>&1; then
+            git tag "$TAG"
+            git push origin "$TAG"
+            echo "Created tag $TAG"
+          else
+            echo "Tag $TAG already exists, skipping"
+          fi
 
       - name: Create Version Release (tag)
         if: startsWith(github.ref, 'refs/tags/v')
