@@ -29,8 +29,6 @@ pnpm install
 pnpm build
 ```
 
-构建产物在 `dist/` 目录下，将其中的文件放入插件目录。
-
 ## 插件配置
 
 > [!WARNING]
@@ -111,18 +109,10 @@ pnpm build
 ## 鸣谢
 
 - **API支持**：感谢[浅巷墨黎](https://github.com/dnyo666)整理并提供的三角洲行动API接口文档及后端
-- **原版插件**：[delta-force-plugin](https://github.com/dnyo666/delta-force-plugin)（Yunzai版本）
-- **API功能参考**：
-  - [deltaforce-酷曦科技](https://github.com/coolxitech/deltaforce) 参考QQ、微信等登陆部分
-- **代码贡献**：
-  - [@浅巷墨黎（Dnyo666）](https://github.com/dnyo666)：原版项目主要开发者
   - [@冷曦](https://github.com/Entropy-Increase-Team)：NapCat 版本迁移与开发
-  - [@MapleLeaf](https://github.com/MapleLeaf2007)：后端基础架构开发
-  - [@Admilk](https://github.com/Admilkk)：后端基础架构开发
 - **特别鸣谢**：
   - [NapCatQQ](https://github.com/NapNeko/NapCatQQ)：NapCat机器人框架
   - [三角洲行动官方](https://df.qq.com)：游戏数据支持
-  - [繁星攻略组](https://space.bilibili.com/3546853731731919)：授权提供计算器算法和数据
 
 ## 其他框架
 
