@@ -339,7 +339,7 @@ export async function getWeeklyReport (msg: OB11Message, args: string): Promise<
   const mode = parseMode(args);
   await reply(msg, '正在查询本周战报...');
 
-  const res = await api.getWeeklyRecord(token, mode || undefined);
+  const res = await api.getWeeklyRecord(token, mode || undefined, true, '', true);
   if (await checkApiError(res, msg)) return true;
 
   if (!res || !(res as any).data) {
@@ -347,34 +347,91 @@ export async function getWeeklyReport (msg: OB11Message, args: string): Promise<
     return true;
   }
 
-  const data = (res as any).data;
-  let text = '【本周战报】\n';
+  const resData = (res as any).data;
 
-  // 烽火数据
-  const sol = data?.sol?.data?.data || data?.solDetail;
-  if (sol) {
-    text += '\n━━ 烽火地带 ━━\n';
-    text += `局数: ${sol.total_round || 0}\n`;
-    text += `撤离: ${sol.escape_count || 0} | 死亡: ${sol.death_count || 0}\n`;
-    text += `击杀: ${sol.kill_human || 0} | 爆头: ${sol.headshot_kill || 0}\n`;
-    text += `总收入: ${sol.earn_money || 0}\n`;
+  // 根据是否指定模式，数据结构不同
+  let solData: any = null;
+  let mpData: any = null;
+
+  if (mode) {
+    const detailData = resData?.data?.data;
+    if (mode === 'sol') solData = detailData;
+    else if (mode === 'mp') mpData = detailData;
+  } else {
+    solData = resData?.sol?.data?.data;
+    mpData = resData?.mp?.data?.data;
   }
 
-  // 全面数据
-  const mp = data?.mp?.data?.data || data?.mpDetail;
-  if (mp) {
-    text += '\n━━ 全面战场 ━━\n';
-    text += `局数: ${mp.total_round || 0}\n`;
-    text += `胜/负: ${mp.win_count || 0}/${mp.lose_count || 0}\n`;
-    text += `击杀: ${mp.kill_human || 0} | 死亡: ${mp.death || 0}\n`;
+  const messages: string[] = [];
+
+  // 烽火地带数据
+  if (solData && solData.total_sol_num && Number(solData.total_sol_num) > 0) {
+    const gainedPrice = Number(solData.Gained_Price) || 0;
+    const consumePrice = Number(solData.consume_Price) || 0;
+    const risePrice = Number(solData.rise_Price) || 0;
+    let profitRatio = '0';
+    if (gainedPrice > 0 && consumePrice > 0) profitRatio = (gainedPrice / consumePrice).toFixed(2);
+    else if (gainedPrice > 0) profitRatio = '∞';
+
+    let sol = `━━ 烽火地带 周报 ━━\n`;
+    sol += `总局数: ${solData.total_sol_num || 0}\n`;
+    sol += `撤离: ${solData.total_exacuation_num || 0} | 死亡: ${solData.total_Death_Count || 0}\n`;
+    sol += `击杀玩家: ${solData.total_Kill_Player || 0} | 击杀AI: ${solData.total_Kill_AI || 0} | 击杀Boss: ${solData.total_Kill_Boss || 0}\n`;
+    sol += `百万出金: ${solData.GainedPrice_overmillion_num || 0} 次\n`;
+    sol += `总收入: ${gainedPrice.toLocaleString()} | 消耗: ${consumePrice.toLocaleString()}\n`;
+    sol += `净利润: ${risePrice.toLocaleString()} | 赚损比: ${profitRatio}\n`;
+    if (solData.total_Quest_num) sol += `任务完成: ${solData.total_Quest_num} 次\n`;
+    if (solData.use_Keycard_num) sol += `使用钥匙卡: ${solData.use_Keycard_num} 次\n`;
+    if (solData.Total_Mileage) sol += `总里程: ${(solData.Total_Mileage / 100000).toFixed(2)} km\n`;
+    if (solData.total_Online_Time) {
+      const h = Math.floor(solData.total_Online_Time / 3600);
+      const m = Math.floor((solData.total_Online_Time % 3600) / 60);
+      sol += `游戏时长: ${h}小时${m}分钟\n`;
+    }
+    if (solData.total_Rescue_num) sol += `救援次数: ${solData.total_Rescue_num}\n`;
+    messages.push(sol.trim());
+
+    // 高价值物资
+    if (solData.CarryOut_highprice_list) {
+      try {
+        const items = solData.CarryOut_highprice_list.split('#').map((s: string) => {
+          try { return JSON.parse(s.replace(/'/g, '"').replace(/([a-zA-Z0-9_]+):/g, '"$1":')); }
+          catch { return null; }
+        }).filter(Boolean).sort((a: any, b: any) => b.iPrice - a.iPrice);
+        if (items.length > 0) {
+          let itemText = '━━ 高价值物资 ━━\n';
+          items.slice(0, 5).forEach((item: any, i: number) => {
+            itemText += `${i + 1}. ${item.auctontype || '物品'} - ${Number(item.iPrice).toLocaleString()}\n`;
+          });
+          messages.push(itemText.trim());
+        }
+      } catch { /* ignore */ }
+    }
   }
 
-  if (!sol && !mp) {
+  // 全面战场数据
+  if (mpData && mpData.total_num && Number(mpData.total_num) > 0) {
+    const totalNum = Number(mpData.total_num) || 0;
+    const winNum = Number(mpData.win_num) || 0;
+    const winRate = totalNum > 0 ? ((winNum / totalNum) * 100).toFixed(1) + '%' : '0%';
+
+    let mp = `━━ 全面战场 周报 ━━\n`;
+    mp += `总局数: ${totalNum} | 胜率: ${winRate}\n`;
+    mp += `胜: ${winNum} | 负: ${totalNum - winNum}\n`;
+    mp += `击杀: ${mpData.Kill_Num || 0} | 连杀: ${mpData.continuous_Kill_Num || 0}\n`;
+    mp += `总积分: ${Number(mpData.total_score || 0).toLocaleString()}\n`;
+    if (mpData.Rescue_Teammate_Count) mp += `救援队友: ${mpData.Rescue_Teammate_Count}\n`;
+    if (mpData.by_Rescue_num) mp += `被救援: ${mpData.by_Rescue_num}\n`;
+    messages.push(mp.trim());
+  }
+
+  if (messages.length === 0) {
     await reply(msg, '暂无周报数据');
     return true;
   }
 
-  await reply(msg, text.trim());
+  messages.unshift('【本周战报】');
+  await makeForwardMsg(msg, messages, { nickname: '周报查询' });
   return true;
 }
 

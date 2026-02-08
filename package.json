@@ -1,7 +1,7 @@
 {
   "name": "napcat-plugin-delta-force",
   "plugin": "三角洲行动",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "三角洲行动游戏数据查询插件 - 基于 NapCat 框架",
   "main": "dist/index.mjs",
   "type": "module",
