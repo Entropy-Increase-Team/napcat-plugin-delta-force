@@ -206,14 +206,15 @@ jobs:
             const idx = data.plugins.findIndex(p => p.id === pluginId);
             if (idx >= 0) {
               console.log('📝 更新已有插件: ' + pluginId);
+              const existing = data.plugins[idx];
+              if (existing.updateTime) newPlugin.updateTime = existing.updateTime;
               data.plugins[idx] = newPlugin;
             } else {
               console.log('➕ 新增插件: ' + pluginId);
               data.plugins.push(newPlugin);
             }
 
-            // 更新时间戳
-            data.updateTime = new Date().toISOString().replace(/\.\d{3}Z/, 'Z');
+            // updateTime 由 PR 合并后 CI 自动更新，此处不修改
 
             fs.writeFileSync(process.env.INDEX_FILE_NAME, JSON.stringify(data, null, 2) + '\n');
             console.log('✅ plugins.v4.json 已更新');
@@ -246,6 +247,3 @@ jobs:
             ---
 
             > 此 PR 由 CI 自动创建，来源: [${{ github.repository }}](${{ steps.meta.outputs.homepage }}) Release ${{ steps.meta.outputs.tag_name }}
-          labels: |
-            自动更新
-            插件更新
