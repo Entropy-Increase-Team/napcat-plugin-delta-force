@@ -13,6 +13,41 @@ import type { CommandDef } from '../utils/command';
 import { logger } from '../utils/logger';
 import { render, generatePlaceInfoHtml } from '../services/render';
 import type { PlaceInfoTemplateData } from '../services/render';
+import fs from 'node:fs';
+import path from 'node:path';
+
+/** 特勤处图片缓存目录 */
+function getPlaceInfoCacheDir (): string {
+  const dir = path.join(pluginState.dataPath, 'cache', 'placeInfo');
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+/** 获取或渲染特勤处图片（永久磁盘缓存） */
+async function getOrRenderPlaceImage (
+  cacheKey: string,
+  placeTypeName: string,
+  placeData: PlaceInfoTemplateData['places'][0],
+): Promise<string | null> {
+  const cacheDir = getPlaceInfoCacheDir();
+  const cachePath = path.join(cacheDir, `${cacheKey}.png.b64`);
+
+  // 命中缓存直接返回
+  if (fs.existsSync(cachePath)) {
+    try {
+      return fs.readFileSync(cachePath, 'utf-8');
+    } catch { /* 缓存读取失败，重新渲染 */ }
+  }
+
+  // 渲染
+  const html = generatePlaceInfoHtml({ placeTypeName, places: [placeData] });
+  const result = await render({ template: html, selector: '.container', width: 1700, fullPage: true, waitForTimeout: 500 });
+  if (result.success && result.data) {
+    try { fs.writeFileSync(cachePath, result.data, 'utf-8'); } catch { /* 写缓存失败不影响 */ }
+    return result.data;
+  }
+  return null;
+}
 
 /** 备用 TTS 接口（仅 AI 锐评使用） */
 const FALLBACK_TTS_URL = 'https://i.elaina.vin/api/tts/';
@@ -708,11 +743,10 @@ export async function getPlaceInfo (msg: OB11Message, args: string): Promise<boo
         levelPlaces = groupedByLevel[actualLevel];
         needNotify = true;
       }
-      const html = generatePlaceInfoHtml({ placeTypeName, places: [levelPlaces[0]] });
-      const result = await render({ template: html, selector: '.container', width: 1700, fullPage: true, waitForTimeout: 500 });
+      const base64 = await getOrRenderPlaceImage(`${type}_${actualLevel}`, placeTypeName, levelPlaces[0]);
       if (needNotify) await reply(msg, `未找到 ${placeTypeName} 等级 ${targetLevel}，已返回最高等级 ${actualLevel}`);
-      if (result.success && result.data) {
-        await replyImage(msg, result.data);
+      if (base64) {
+        await replyImage(msg, base64);
       } else {
         await reply(msg, `渲染 ${placeTypeName} 等级 ${actualLevel} 图片失败`);
       }
@@ -726,11 +760,10 @@ export async function getPlaceInfo (msg: OB11Message, args: string): Promise<boo
     for (const level of sortedLevels) {
       const levelPlaces = groupedByLevel[level];
       if (!levelPlaces || levelPlaces.length === 0) continue;
-      const html = generatePlaceInfoHtml({ placeTypeName, places: [levelPlaces[0]] });
       try {
-        const result = await render({ template: html, selector: '.container', width: 1700, fullPage: true, waitForTimeout: 500 });
-        if (result.success && result.data) {
-          forwardMsgs.push(`【${placeTypeName} - Lv.${level}】\n[CQ:image,file=base64://${result.data}]`);
+        const base64 = await getOrRenderPlaceImage(`${type}_${level}`, placeTypeName, levelPlaces[0]);
+        if (base64) {
+          forwardMsgs.push(`【${placeTypeName} - Lv.${level}】\n[CQ:image,file=base64://${base64}]`);
         } else {
           forwardMsgs.push(`【${placeTypeName} - Lv.${level}】渲染失败`);
         }
