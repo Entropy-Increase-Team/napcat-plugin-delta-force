@@ -6,11 +6,13 @@
 import type { OB11Message } from 'napcat-types';
 import { pluginState } from '../core/state';
 import { createApi } from '../core/api';
-import { reply, replyAt, getUserId, makeForwardMsg, sendAudio } from '../utils/message';
+import { reply, replyAt, replyImage, getUserId, makeForwardMsg, sendAudio } from '../utils/message';
 import { handleApiError as _handleApiError } from '../utils/error-handler';
 import { getAccount } from '../utils/account';
 import type { CommandDef } from '../utils/command';
 import { logger } from '../utils/logger';
+import { render, generatePlaceInfoHtml } from '../services/render';
+import type { PlaceInfoTemplateData } from '../services/render';
 
 /** 备用 TTS 接口（仅 AI 锐评使用） */
 const FALLBACK_TTS_URL = 'https://i.elaina.vin/api/tts/';
@@ -513,29 +515,236 @@ export async function getPlaceInfo (msg: OB11Message, args: string): Promise<boo
     return true;
   }
 
-  const place = args.trim() || undefined;
-  const res = await api.getPlaceInfo(token, place);
+  // 解析参数
+  const placeMap: Record<string, string> = {
+    '仓库': 'storage', '指挥中心': 'control', '工作台': 'workbench',
+    '技术中心': 'tech', '靶场': 'shoot', '训练中心': 'training',
+    '制药台': 'pharmacy', '防具台': 'armory', '收藏室': 'collect', '潜水中心': 'diving',
+  };
+  const typeNameMap: Record<string, string> = {
+    'storage': '仓库', 'control': '指挥中心', 'workbench': '工作台',
+    'tech': '技术中心', 'shoot': '靶场', 'training': '训练中心',
+    'pharmacy': '制药台', 'armory': '防具台', 'collect': '收藏室', 'diving': '潜水中心',
+  };
+  const typeImageMap: Record<string, string> = {
+    'storage': 'imgs/place/仓库.png', 'control': 'imgs/place/指挥中心.png',
+    'workbench': 'imgs/place/工作台.png', 'tech': 'imgs/place/技术中心.png',
+    'shoot': 'imgs/place/靶场.png', 'training': 'imgs/place/训练中心.png',
+    'pharmacy': 'imgs/place/制药台.png', 'armory': 'imgs/place/防具台.png',
+    'collect': 'imgs/place/收藏室.png', 'diving': 'imgs/place/潜水中心.png',
+  };
+
+  const argParts = args.trim().split(/\s+/);
+  const firstArg = argParts[0] || '';
+  const secondArg = argParts[1] ? parseInt(argParts[1]) : null;
+
+  if (!firstArg) {
+    await reply(msg, [
+      '请使用以下命令格式：\n',
+      '• 三角洲特勤处信息 all - 查询所有设施\n',
+      '• 三角洲特勤处信息 仓库 - 查询仓库所有等级\n',
+      '• 三角洲特勤处信息 仓库 1 - 查询仓库等级1\n',
+      '\n支持的设施类型：\n',
+      '仓库、指挥中心、工作台、技术中心、靶场、训练中心、制药台、防具台、收藏室、潜水中心',
+    ].join(''));
+    return true;
+  }
+
+  const isAll = firstArg.toLowerCase() === 'all';
+  const placeType = isAll ? '' : (placeMap[firstArg] || '');
+  const targetLevel = secondArg !== null && !isNaN(secondArg) ? secondArg : null;
+
+  await reply(msg, '正在查询特勤处信息，请稍候...');
+
+  const res = await api.getPlaceInfo(token, placeType);
   if (await checkApiError(res, msg)) return true;
 
-  if (!res || !(res as any).data) {
+  if (!res || !(res as any).data || !(res as any).data.places) {
     await reply(msg, '获取特勤处信息失败');
     return true;
   }
 
-  const data = (res as any).data;
-  let text = '【特勤处信息】\n';
-
-  if (typeof data === 'object') {
-    Object.entries(data).forEach(([key, value]: [string, any]) => {
-      if (typeof value === 'object' && value !== null) {
-        text += `\n${key}:\n`;
-        text += `  等级: ${value.level || '-'}\n`;
-        if (value.upgradeCost) text += `  升级费用: ${value.upgradeCost}\n`;
-      }
-    });
+  const { places, relateMap = {} } = (res as any).data;
+  if (places.length === 0) {
+    await reply(msg, '未查询到特勤处设施信息');
+    return true;
   }
 
-  await reply(msg, text.trim());
+  // 处理场所数据（与 Yunzai 插件 processPlaces 逻辑一致）
+  function processPlaces (rawPlaces: any[]): PlaceInfoTemplateData['places'] {
+    const result: PlaceInfoTemplateData['places'] = [];
+    for (const place of rawPlaces) {
+      const placeTypeValue = place.placeType || '';
+      let displayName = place.placeName || '';
+      if (!/[\u4e00-\u9fa5]/.test(displayName)) {
+        displayName = typeNameMap[placeTypeValue] || displayName || '未知设施';
+      }
+
+      const processed: PlaceInfoTemplateData['places'][0] = {
+        displayName,
+        level: place.level || 0,
+        imageUrl: typeImageMap[placeTypeValue] || null,
+        detail: place.detail || '',
+        upgradeInfo: null,
+        upgradeRequired: [],
+        unlockInfo: null,
+      };
+
+      // 升级信息
+      if (place.upgradeInfo) {
+        const conditionText = place.upgradeInfo.condition || '无';
+        const conditions: string[] = [];
+        let levelCondition: string | null = null;
+        if (conditionText && conditionText !== '无' && conditionText !== '默认解锁') {
+          const allConds = conditionText.split(/[;；]/).map((c: string) => c.trim()).filter((c: string) => c.length > 0);
+          allConds.forEach((c: string) => {
+            if (/解锁等级|等级\d+/.test(c)) levelCondition = c;
+            else conditions.push(c);
+          });
+        }
+        processed.upgradeInfo = {
+          condition: conditionText,
+          conditions,
+          levelCondition,
+          hafCount: place.upgradeInfo.hafCount || 0,
+          hafCountFormatted: (place.upgradeInfo.hafCount || 0) > 0 ? (place.upgradeInfo.hafCount).toLocaleString() : '0',
+        };
+      }
+
+      // 升级所需物品
+      if (place.upgradeRequired && place.upgradeRequired.length > 0) {
+        processed.upgradeRequired = place.upgradeRequired.map((req: any) => {
+          const itemInfo = relateMap[String(req.objectID)];
+          return {
+            objectName: itemInfo?.objectName || `物品ID: ${req.objectID}`,
+            count: req.count,
+            imageUrl: itemInfo?.pic || (req.objectID ? `https://playerhub.df.qq.com/playerhub/60004/object/${req.objectID}.png` : null),
+          };
+        });
+      }
+
+      // 解锁信息
+      if (place.unlockInfo) {
+        const unlockData: NonNullable<typeof processed.unlockInfo> = { properties: [], props: [] };
+        const properties = place.unlockInfo.properties?.list || [];
+        if (properties.length > 0) {
+          unlockData.properties = properties.map((prop: any) => {
+            if (typeof prop === 'string') return prop;
+            if (prop && typeof prop === 'object') return prop.name || prop.objectName || prop.desc || JSON.stringify(prop);
+            return String(prop);
+          });
+        }
+        const props = place.unlockInfo.props || [];
+        if (props.length > 0) {
+          unlockData.props = props.map((prop: any) => {
+            if (typeof prop === 'string') return { objectName: prop, imageUrl: null, count: null };
+            let objectName = '未知道具';
+            let imageUrl: string | null = null;
+            if (prop.objectID) {
+              const itemInfo = relateMap[String(prop.objectID)];
+              objectName = itemInfo?.objectName || `物品ID: ${prop.objectID}`;
+              imageUrl = itemInfo?.pic || `https://playerhub.df.qq.com/playerhub/60004/object/${prop.objectID}.png`;
+            } else if (prop.name || prop.objectName) {
+              objectName = prop.name || prop.objectName;
+            }
+            return { objectName, imageUrl, count: prop.count || null };
+          });
+        }
+        if (unlockData.properties.length > 0 || unlockData.props.length > 0) {
+          processed.unlockInfo = unlockData;
+        }
+      }
+
+      result.push(processed);
+    }
+    return result;
+  }
+
+  // 按场所类型分组
+  const groupedByType: Record<string, any[]> = {};
+  places.forEach((p: any) => {
+    const t = p.placeType || 'unknown';
+    if (!groupedByType[t]) groupedByType[t] = [];
+    groupedByType[t].push(p);
+  });
+
+  const typeOrder = ['storage', 'control', 'workbench', 'tech', 'shoot', 'training', 'pharmacy', 'armory', 'collect', 'diving'];
+  const sortedTypes = placeType ? [placeType] : Object.keys(groupedByType).sort((a, b) => {
+    const ia = typeOrder.indexOf(a), ib = typeOrder.indexOf(b);
+    if (ia === -1 && ib === -1) return a.localeCompare(b);
+    if (ia === -1) return 1;
+    if (ib === -1) return -1;
+    return ia - ib;
+  });
+
+  // 遍历每个类型，按等级分组，每个等级渲染一张图片，合并转发
+  for (const type of sortedTypes) {
+    const typePlaces = groupedByType[type];
+    if (!typePlaces || typePlaces.length === 0) continue;
+
+    const processed = processPlaces(typePlaces);
+    const placeTypeName = typeNameMap[type] || type;
+
+    // 按等级分组
+    const groupedByLevel: Record<number, typeof processed> = {};
+    processed.forEach(p => {
+      if (!groupedByLevel[p.level]) groupedByLevel[p.level] = [];
+      groupedByLevel[p.level].push(p);
+    });
+
+    const sortedLevels = Object.keys(groupedByLevel).map(Number).sort((a, b) => a - b);
+
+    // 如果指定了等级，只返回该等级
+    if (targetLevel !== null) {
+      let levelPlaces = groupedByLevel[targetLevel];
+      let actualLevel = targetLevel;
+      let needNotify = false;
+      if (!levelPlaces || levelPlaces.length === 0) {
+        if (sortedLevels.length === 0) {
+          await reply(msg, `未找到 ${placeTypeName} 的设施信息`);
+          return true;
+        }
+        actualLevel = Math.max(...sortedLevels);
+        levelPlaces = groupedByLevel[actualLevel];
+        needNotify = true;
+      }
+      const html = generatePlaceInfoHtml({ placeTypeName, places: [levelPlaces[0]] });
+      const result = await render({ template: html, selector: '.container', width: 1700, fullPage: true, waitForTimeout: 500 });
+      if (needNotify) await reply(msg, `未找到 ${placeTypeName} 等级 ${targetLevel}，已返回最高等级 ${actualLevel}`);
+      if (result.success && result.data) {
+        await replyImage(msg, result.data);
+      } else {
+        await reply(msg, `渲染 ${placeTypeName} 等级 ${actualLevel} 图片失败`);
+      }
+      return true;
+    }
+
+    // 没有指定等级，每个等级一张图片，合并转发
+    const forwardMsgs: string[] = [];
+    forwardMsgs.push(`【${placeTypeName}】\n共 ${processed.length} 个设施，${sortedLevels.length} 个等级`);
+
+    for (const level of sortedLevels) {
+      const levelPlaces = groupedByLevel[level];
+      if (!levelPlaces || levelPlaces.length === 0) continue;
+      const html = generatePlaceInfoHtml({ placeTypeName, places: [levelPlaces[0]] });
+      try {
+        const result = await render({ template: html, selector: '.container', width: 1700, fullPage: true, waitForTimeout: 500 });
+        if (result.success && result.data) {
+          forwardMsgs.push(`【${placeTypeName} - Lv.${level}】\n[CQ:image,file=base64://${result.data}]`);
+        } else {
+          forwardMsgs.push(`【${placeTypeName} - Lv.${level}】渲染失败`);
+        }
+      } catch (error) {
+        logger.error(`[特勤处信息] 渲染 ${placeTypeName} Lv.${level} 失败:`, error);
+        forwardMsgs.push(`【${placeTypeName} - Lv.${level}】渲染失败`);
+      }
+    }
+
+    if (forwardMsgs.length > 1) {
+      await makeForwardMsg(msg, forwardMsgs, { nickname: '特勤处信息' });
+    }
+  }
+
   return true;
 }
 

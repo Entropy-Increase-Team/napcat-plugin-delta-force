@@ -1392,3 +1392,182 @@ export function generateRecordHtml (data: RecordTemplateData): string {
 </body>
 </html>`;
 }
+
+
+// ==================== 特勤处信息模板 ====================
+
+export interface PlaceInfoTemplateData {
+  placeTypeName: string;
+  places: Array<{
+    displayName: string;
+    level: number;
+    imageUrl: string | null;
+    detail: string;
+    upgradeInfo: {
+      condition: string;
+      conditions: string[];
+      levelCondition: string | null;
+      hafCount: number;
+      hafCountFormatted: string;
+    } | null;
+    upgradeRequired: Array<{
+      objectName: string;
+      count: number;
+      imageUrl: string | null;
+    }>;
+    unlockInfo: {
+      properties: string[];
+      props: Array<{
+        objectName: string;
+        imageUrl: string | null;
+        count: number | null;
+      }>;
+    } | null;
+  }>;
+}
+
+/** 生成特勤处信息 HTML（单个设施单个等级） */
+export function generatePlaceInfoHtml (data: PlaceInfoTemplateData): string {
+  const resPath = getStaticUrl() + '/';
+
+  const placesHtml = data.places.map(place => {
+    // 升级条件
+    let upgradeHtml = '';
+    if (place.upgradeInfo) {
+      let tilesHtml = '';
+      if (place.upgradeInfo.levelCondition) {
+        tilesHtml += `<div class="info-tile"><div class="tile-label">解锁等级</div><div class="tile-value">${place.upgradeInfo.levelCondition}</div></div>`;
+      }
+      if (place.upgradeInfo.conditions && place.upgradeInfo.conditions.length > 0) {
+        tilesHtml += place.upgradeInfo.conditions.map(c => `<div class="info-tile"><div class="tile-label">条件</div><div class="tile-value">${c}</div></div>`).join('');
+      } else if (place.upgradeInfo.condition && !place.upgradeInfo.levelCondition) {
+        tilesHtml += `<div class="info-tile"><div class="tile-label">条件</div><div class="tile-value">${place.upgradeInfo.condition}</div></div>`;
+      }
+      if (place.upgradeInfo.hafCount > 0) {
+        tilesHtml += `<div class="info-tile"><div class="tile-label">所需哈夫币</div><div class="tile-value highlight">${place.upgradeInfo.hafCountFormatted}</div></div>`;
+      }
+      if (tilesHtml) {
+        upgradeHtml = `<div class="section"><div class="section-title">升级条件 / REQUIREMENTS</div><div class="upgrade-grid">${tilesHtml}</div></div>`;
+      }
+    }
+
+    // 所需物资
+    let materialsHtml = '';
+    if (place.upgradeRequired && place.upgradeRequired.length > 0) {
+      const itemsHtml = place.upgradeRequired.map(item => `
+        <div class="material-item">
+          <div class="mat-img-container">
+            <img class="mat-img" src="${item.imageUrl || ''}" alt="${item.objectName}" onerror="this.style.display='none'" />
+          </div>
+          <div class="mat-name">${item.objectName}</div>
+          <div class="mat-count">×${item.count}</div>
+        </div>`).join('');
+      materialsHtml = `<div class="section"><div class="section-title">所需物资 / MATERIALS</div><div class="materials-list">${itemsHtml}</div></div>`;
+    }
+
+    // 解锁效果
+    let unlockHtml = '';
+    if (place.unlockInfo) {
+      if (place.unlockInfo.properties && place.unlockInfo.properties.length > 0) {
+        const propsHtml = place.unlockInfo.properties.map(p => `<div class="effect-chip">+ ${p}</div>`).join('');
+        unlockHtml += `<div class="section"><div class="section-title">解锁效果 / UNLOCK EFFECTS</div><div class="effect-row">${propsHtml}</div></div>`;
+      }
+      if (place.unlockInfo.props && place.unlockInfo.props.length > 0) {
+        const itemsHtml = place.unlockInfo.props.map(p => `
+          <div class="unlock-tag">
+            ${p.imageUrl ? `<img class="unlock-tag-img" src="${p.imageUrl}" alt="${p.objectName}" onerror="this.style.display='none'" />` : ''}
+            <span>${p.objectName}${p.count ? ` ×${p.count}` : ''}</span>
+          </div>`).join('');
+        unlockHtml += `<div class="section"><div class="section-title">解锁物品库 / ITEM REGISTRY</div><div class="unlock-grid">${itemsHtml}</div></div>`;
+      }
+    }
+
+    // 详情
+    const detailHtml = place.detail ? `<div class="section"><div class="section-title">详情 / DETAILS</div><div class="detail-text">${place.detail}</div></div>` : '';
+
+    return `
+      <div class="place-card">
+        <div class="place-left">
+          <div class="place-name">${place.displayName}</div>
+          ${place.imageUrl ? `<div class="image-box"><img class="place-image" src="${resPath}${place.imageUrl}" alt="${place.displayName}" onerror="this.style.display='none'" /></div>` : ''}
+          <div class="level-display">
+            <span class="level-label">当前等级 / CURRENT LEVEL</span>
+            <span class="level-value">${place.level}</span>
+          </div>
+        </div>
+        <div class="place-right">
+          ${upgradeHtml}
+          ${materialsHtml}
+          ${unlockHtml}
+          ${detailHtml}
+        </div>
+      </div>`;
+  }).join('');
+
+  return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>特勤处信息</title>
+  <style>
+@font-face { font-family: 'ProjectD'; src: url("${resPath}fonts/p-med.ttf") format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'ProjectD'; src: url("${resPath}fonts/p-bold.ttf") format('truetype'); font-weight: 700; font-style: normal; font-display: swap; }
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-user-select: none; user-select: none; }
+body { background: #06090c; color: #d1d5db; font-family: 'ProjectD', "Microsoft YaHei", sans-serif; width: 1700px; margin: 0 auto; overflow: hidden; height: auto; min-height: 600px; }
+.container { position: relative; width: 100%; min-height: 1000px; background: radial-gradient(circle at 50% 0%, #161d24 0%, #06090c 100%); padding-bottom: 60px; }
+.container::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(15, 247, 150, 0.05) 1px, transparent 1px); background-size: 30px 30px; z-index: 0; }
+.header { position: relative; z-index: 2; display: flex; align-items: center; padding: 40px 60px; border-bottom: 1px solid rgba(15, 247, 150, 0.1); }
+.game-logo { height: 40px; width: auto; }
+.header-center { position: absolute; left: 50%; transform: translateX(-50%); text-align: center; }
+.title { color: #FFFFFF; font-size: 32px; font-weight: 700; letter-spacing: 6px; text-shadow: 0 0 20px rgba(15, 247, 150, 0.4); }
+.subtitle { font-size: 12px; color: rgba(15, 247, 150, 0.5); letter-spacing: 2px; margin-top: 5px; text-transform: uppercase; }
+.content { position: relative; z-index: 2; padding: 40px 60px 0 60px; }
+.place-card { display: flex; gap: 60px; background: rgba(20, 25, 30, 0.4); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 4px; padding: 50px; position: relative; margin-bottom: 0; }
+.place-card::after { content: ""; position: absolute; top: -1px; left: -1px; width: 30px; height: 30px; border-top: 3px solid #0FF796; border-left: 3px solid #0FF796; }
+.place-left { width: 480px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: space-between; }
+.place-name { font-size: 56px; font-weight: 700; color: #FFFFFF; margin-bottom: 40px; letter-spacing: 2px; text-align: center; }
+.image-box { width: 450px; height: 400px; display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 0; flex: 1; }
+.place-image { max-width: 150%; max-height: 150%; object-fit: contain; filter: drop-shadow(0 0 40px rgba(15, 247, 150, 0.15)); }
+.level-display { margin-top: 0; width: 100%; text-align: center; padding-top: 20px; }
+.level-label { font-size: 14px; color: #FFFFFF; font-weight: 700; letter-spacing: 4px; display: block; margin-bottom: 10px; }
+.level-value { font-size: 100px; font-weight: 800; color: #FFFFFF; line-height: 1; }
+.place-right { flex: 1; display: flex; flex-direction: column; gap: 40px; }
+.section { width: 100%; }
+.section-title { font-size: 14px; color: #0FF796; font-weight: bold; letter-spacing: 2px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; text-transform: uppercase; }
+.section-title::before { content: ""; width: 4px; height: 14px; background: #0FF796; }
+.upgrade-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.info-tile { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); padding: 20px 25px; border-radius: 4px; }
+.tile-label { font-size: 12px; color: #888; margin-bottom: 10px; }
+.tile-value { font-size: 24px; font-weight: bold; color: #fff; }
+.tile-value.highlight { color: #0FF796; }
+.materials-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.material-item { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); padding: 25px; display: flex; flex-direction: column; align-items: center; border-radius: 4px; }
+.mat-img-container { width: 120px; height: 120px; background: rgba(0, 0, 0, 0.4); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; box-shadow: inset 0 0 20px rgba(15, 247, 150, 0.1); }
+.mat-img { width: 90px; height: 90px; object-fit: contain; }
+.mat-name { font-size: 16px; color: #eee; margin-bottom: 8px; font-weight: bold; }
+.mat-count { font-size: 20px; color: #0FF796; font-weight: 800; }
+.unlock-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.unlock-tag { background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.05); padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; font-size: 13px; color: #FFFFFF; font-weight: 700; text-align: center; border-radius: 4px; min-height: 120px; }
+.unlock-tag-img { width: 64px; height: 64px; object-fit: contain; background: rgba(255, 255, 255, 0.05); padding: 6px; border-radius: 4px; flex-shrink: 0; }
+.unlock-tag span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; text-align: center; }
+.effect-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.effect-chip { background: rgba(15, 247, 150, 0.1); border: 1px solid rgba(15, 247, 150, 0.3); color: #0FF796; padding: 5px 15px; border-radius: 2px; font-size: 13px; }
+.detail-text { color: rgba(255, 255, 255, 0.8); font-size: 14px; line-height: 1.7; font-style: italic; padding: 12px 16px; background: rgba(0, 0, 0, 0.4); border-radius: 4px; border-left: 3px solid #0FF796; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img class="game-logo" src="${resPath}imgs/others/logo.png" alt="LOGO" />
+      <div class="header-center">
+        <div class="title">特勤处信息</div>
+        <div class="subtitle">Special Services Division Intel</div>
+      </div>
+    </div>
+    <div class="content">
+      ${placesHtml}
+    </div>
+  </div>
+</body>
+</html>`;
+}
