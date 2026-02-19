@@ -87,7 +87,7 @@ export const plugin_init = async (ctx: NapCatPluginContext): Promise<void> => {
     registerRoutes(ctx);
 
     pluginState.log('info', '插件已启用');
-    pluginState.log('info', '欢迎加入插件反馈群 631348711 或 API交流群 932459332');
+    pluginState.log('info', '欢迎加入插件反馈群 1085402468 或 API交流群 932459332');
 
     setTimeout(() => initServicesAsync(), 1000);
   } catch (error) {

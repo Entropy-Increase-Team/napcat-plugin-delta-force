@@ -639,7 +639,7 @@ async function sendTextHelp (msg: OB11Message): Promise<void> {
 
   messages.push(`🎵 娱乐功能\n${prefix}语音 [角色名] - 播放语音\n${prefix}鼠鼠音乐 - 播放音乐\n${prefix}tts [角色] [情感] 文本 - TTS语音`);
 
-  messages.push(`插件反馈群：631348711 | API交流群：932459332`);
+  messages.push(`插件反馈群：1085402468 | API交流群：932459332`);
 
   await makeForwardMsg(msg, messages, { nickname: '帮助菜单' });
 }

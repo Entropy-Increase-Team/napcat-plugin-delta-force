@@ -25,7 +25,7 @@ export function initConfigUI (ctx: NapCatPluginContext): PluginConfigSchema {
         </div>
         <p style="margin: 0 0 4px; font-size: 13px; color: #6b7280; line-height: 1.5;">
           发送 <code style="background: rgba(249,115,22,0.2); padding: 2px 6px; border-radius: 4px; color: #F97316;">三角洲帮助</code> 查看指令 | 
-          插件反馈群: <span style="color: #F97316; font-weight: 500;">631348711</span> | 
+          插件反馈群: <span style="color: #F97316; font-weight: 500;">1085402468</span> | 
           API交流群: <span style="color: #F97316; font-weight: 500;">932459332</span>
         </p>
       </div>

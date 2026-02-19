@@ -32,7 +32,7 @@ export interface ErrorHandleResult {
 }
 
 /** 插件反馈群号 */
-const FEEDBACK_GROUP = '631348711';
+const FEEDBACK_GROUP = '1085402468';
 
 /** 错误提示消息映射 */
 const ERROR_MESSAGES: Record<ErrorType, string> = {
